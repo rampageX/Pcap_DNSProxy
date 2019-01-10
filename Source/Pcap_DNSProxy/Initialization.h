@@ -1,6 +1,6 @@
 ﻿// This code is part of Pcap_DNSProxy
-// A local DNS server based on WinPcap and LibPcap
-// Copyright (C) 2012-2016 Chengr28
+// Pcap_DNSProxy, a local DNS server based on WinPcap and LibPcap
+// Copyright (C) 2012-2019 Chengr28
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,7 +17,10 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-#include "Base.h"
+#ifndef PCAP_DNSPROXY_INITIALIZATION_H
+#define PCAP_DNSPROXY_INITIALIZATION_H
+
+#include "Include.h"
 
 //Global variables
 CONFIGURATION_TABLE Parameter, ParameterModificating;
@@ -28,15 +31,22 @@ BLOCKING_QUEUE<MONITOR_QUEUE_DATA> MonitorBlockingQueue;
 DNSCURVE_CONFIGURATION_TABLE DNSCurveParameter, DNSCurveParameterModificating;
 #endif
 std::vector<FILE_DATA> FileList_Config, FileList_IPFilter, FileList_Hosts;
-std::vector<DIFFERNET_FILE_SET_IPFILTER> IPFilterFileSet[2U], *IPFilterFileSetUsing = &IPFilterFileSet[0], *IPFilterFileSetModificating = &IPFilterFileSet[1U];
-std::vector<DIFFERNET_FILE_SET_HOSTS> HostsFileSet[2U], *HostsFileSetUsing = &HostsFileSet[0], *HostsFileSetModificating = &HostsFileSet[1U];
-std::deque<SOCKET_MARKING_DATA> SocketMarkingList;
+#if defined(ENABLE_LIBSODIUM)
+std::vector<FILE_DATA> FileList_DNSCurveDatabase;
+#endif
+std::array<std::vector<DIFFERNET_FILE_SET_IPFILTER>, DIFFERNET_FILE_SET_NUM> IPFilterFileSet;
+std::vector<DIFFERNET_FILE_SET_IPFILTER> *IPFilterFileSetUsing = &IPFilterFileSet.at(0), *IPFilterFileSetModificating = &IPFilterFileSet.at(1U);
+std::array<std::vector<DIFFERNET_FILE_SET_HOSTS>, DIFFERNET_FILE_SET_NUM> HostsFileSet;
+std::vector<DIFFERNET_FILE_SET_HOSTS> *HostsFileSetUsing = &HostsFileSet.at(0), *HostsFileSetModificating = &HostsFileSet.at(1U);
+std::deque<SOCKET_REGISTER_DATA> SocketRegisterList;
 #if defined(ENABLE_PCAP)
 std::deque<OUTPUT_PACKET_TABLE> OutputPacketList;
 std::mutex CaptureLock, OutputPacketListLock;
 #endif
-std::deque<DNS_CACHE_DATA> DNSCacheList;
-std::mutex ScreenLock, LocalAddressLock[NETWORK_LAYER_PARTNUM], SocketMarkingLock, DNSCacheListLock, IPFilterFileLock, HostsFileLock;
+std::list<DNS_CACHE_DATA> DNSCacheList;
+std::unordered_multimap<std::string, std::list<DNS_CACHE_DATA>::iterator> DNSCacheIndexList;
+std::mutex ScreenLock, SocketRegisterLock, DNSCacheListLock, IPFilterFileLock, HostsFileLock;
+std::array<std::mutex, NETWORK_LAYER_PARTNUM> LocalAddressLock;
 
 //Functions
 void ConfigurationTableSetting(
@@ -46,4 +56,5 @@ void GlobalStatusSetting(
 #if defined(ENABLE_LIBSODIUM)
 void DNSCurveConfigurationTableSetting(
 	DNSCURVE_CONFIGURATION_TABLE * const DNSCurveConfigurationParameter);
+#endif
 #endif

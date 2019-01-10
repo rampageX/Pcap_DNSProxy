@@ -1,6 +1,6 @@
 ﻿// This code is part of Pcap_DNSProxy
-// A local DNS server based on WinPcap and LibPcap
-// Copyright (C) 2012-2016 Chengr28
+// Pcap_DNSProxy, a local DNS server based on WinPcap and LibPcap
+// Copyright (C) 2012-2019 Chengr28
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,7 +17,14 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
+#ifndef PCAP_DNSPROXY_STRUCTURE_H
+#define PCAP_DNSPROXY_STRUCTURE_H
+
 #include "Platform.h"
+
+//Memory alignment settings(Part 1)
+#pragma pack(push) //Push current alignment to stack.
+#pragma pack(1) //Set alignment to 1 byte boundary.
 
 //////////////////////////////////////////////////
 // Protocol Header structures
@@ -53,12 +60,12 @@
 #define FCS_TABLE_SIZE      256U     //FCS Table size
 typedef struct _eth_hdr_
 {
-	uint8_t                Dst[6U];
-	uint8_t                Src[6U];
+	uint8_t                Destination[6U];
+	uint8_t                Source[6U];
 	uint16_t               Type;
 //	uint8_t                *Payload;
 //	uint32_t               FCS;
-}eth_hdr, *peth_hdr;
+}eth_hdr;
 
 /* Apple IEEE 1394/FireWire header
 * IEEE 1394-1995, IEEE Standard for a High Performance Serial Bus(https://standards.ieee.org/findstds/standard/1394-1995.html)
@@ -86,10 +93,10 @@ typedef struct _eth_hdr_
 */
 typedef struct _ieee_1394_hdr_
 {
-	uint8_t                Dst[8U];
-	uint8_t                Src[8U];
+	uint8_t                Destination[8U];
+	uint8_t                Source[8U];
 	uint16_t               Type;
-}ieee_1394_hdr, *pieee_1394_hdr;
+}ieee_1394_hdr;
 
 /* IEEE 802.1Q
 * Media Access Control Bridges and Virtual Bridged Local Area Networks/VLAN(https://www.ietf.org/meeting/86/tutorials/86-IEEE-8021-Thaler.pdf)
@@ -103,8 +110,9 @@ typedef struct _ieee_1394_hdr_
 */
 typedef struct _ieee_8021q_hdr_
 {
-	union {
+//	union {
 		uint16_t           Flags;
+/* No need to define sub structure.
 		struct {
 		#if BYTE_ORDER == LITTLE_ENDIAN
 			uint8_t        ID_First:4;
@@ -117,10 +125,11 @@ typedef struct _ieee_8021q_hdr_
 			uint8_t        ID_First:4;
 			uint8_t        ID_Second;
 		#endif
-		}Flags_Bits;
+		}FlagsBits;
 	};
+*/
 	uint16_t               Type;
-}ieee_8021q_hdr, *pieee_8021q_hdr;
+}ieee_8021q_hdr;
 
 
 /* Point-to-Point Protocol /PPP header
@@ -144,10 +153,10 @@ typedef struct _ppp_hdr_
 	uint16_t               SessionID;
 	uint16_t               Length;
 	uint16_t               Protocol;
-}ppp_hdr, *pppp_hdr;
+}ppp_hdr;
 
 //Internet Protocol Numbers
-//About this list, see IANA Assigned Internet Protocol Numbers(https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml)
+//About this list, please visit IANA Assigned Internet Protocol Numbers(https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml)
 #ifndef IPPROTO_HOPOPTS
 	#define IPPROTO_HOPOPTS           0                    //IPv6 Hop-by-Hop Option
 #endif
@@ -210,7 +219,7 @@ typedef struct _ppp_hdr_
 #endif
 #ifndef IPPROTO_HMP
 	#define IPPROTO_HMP               20U                  //Host Monitoring
-#endif 
+#endif
 #ifndef IPPROTO_PRM
 	#define IPPROTO_PRM               21U                  //Packet Radio Measurement
 #endif
@@ -591,9 +600,9 @@ typedef struct _ppp_hdr_
                     1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|Version|  IHL  |   DSCP    |ECN|         Total Length          |  IHL/Internet Header Length, DSCP/Differentiated Services Code Point and ECN/Explicit Congestion Notification
+|Version|  IHL  |   DSCP    |ECN|         Total Length          |   IHL/Internet Header Length, DSCP/Differentiated Services Code Point and ECN/Explicit Congestion Notification
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|        Identification         |Z|D|M|     Fragment Offset     |  Flags(Z/Zero/Reserved bit, D/DF/More Fragments bit and M/MF/More Fragments bit)
+|        Identification         |Z|D|M|     Fragment Offset     |   Flags(Z/Zero/Reserved bit, D/DF/More Fragments bit and M/MF/More Fragments bit)
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 | Time To Live  |   Protocol    |        Header Checksum        |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -607,8 +616,11 @@ typedef struct _ppp_hdr_
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 */
-#define IPV4_STANDARD_IHL            0x05   //Standard IPv4 header length(0x05/20 bytes)
-#define IPV4_IHL_BYTES_TIMES         4U     //IHL is number of 32-bit words(4 bytes).
+#define IPV4_IHL_STANDARD               0x05     //Standard IPv4 header length(0x05/20 bytes)
+#define IPV4_IHL_BYTES_SET              4U       //IHL is set number of 32-bit words, in 4 bytes
+#define IPV4_FLAG_GET_BIT_MF            0x2000   //Get More Fragment bit in Flags.
+#define IPV4_FLAG_GET_BIT_RES_DF        0xC000   //Get Reserved and Don't Fragment bits in Flags.
+#define IPV4_FLAG_GET_FRAGMENT_OFFSET   0x1FFF   //Get Fragment Offset bits in Flags.
 typedef struct _ipv4_hdr_
 {
 #if BYTE_ORDER == LITTLE_ENDIAN
@@ -618,8 +630,9 @@ typedef struct _ipv4_hdr_
 	uint8_t                Version:4;
 	uint8_t                IHL:4;
 #endif
-	union {
-		uint8_t            ECN_DSCP;
+//	union {
+		uint8_t            DSCP_ECN;
+/* No need to define sub structure.
 		struct {
 		#if BYTE_ORDER == LITTLE_ENDIAN
 			uint8_t        ECN:2;
@@ -628,12 +641,14 @@ typedef struct _ipv4_hdr_
 			uint8_t        DSCP:6;
 			uint8_t        ECN:2;
 		#endif
-		}ECN_DSCP_Bits;
-	};
+		}DSCP_ECN_Bits;
+*/
+//	};
 	uint16_t               Length;
 	uint16_t               ID;
-	union {
+//	union {
 		uint16_t           Flags;
+/* No need to define sub structure.
 		struct {
 		#if BYTE_ORDER == LITTLE_ENDIAN
 			uint8_t        FO_First:5;
@@ -649,21 +664,23 @@ typedef struct _ipv4_hdr_
 			uint8_t        FO_Second;
 		#endif
 		}FlagsBits;
-	};
+*/
+//	};
 	uint8_t                TTL;
 	uint8_t                Protocol;
 	uint16_t               Checksum;
 	in_addr                Source;
 	in_addr                Destination;
-}ipv4_hdr, *pipv4_hdr;
+}ipv4_hdr;
 
 /* Internet Protocol version 6/IPv6 header
-* RFC 2460, Internet Protocol, Version 6 (IPv6) Specification(https://tools.ietf.org/html/rfc2460)
+* RFC 5533, Shim6: Level 3 Multihoming Shim Protocol for IPv6(https://tools.ietf.org/html/rfc5533)
+* RFC 8200, Internet Protocol, Version 6 (IPv6) Specification(https://tools.ietf.org/html/rfc8200)
 
                     1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|Version|    DSF    |T|E|              Flow Label               |  DSF/Differentiated Services Field, E/ECT/Explicit Congestion Notification - Capable Transport, T/ECN-CE/Explicit Congestion Notification - Congestion Encountered
+|Version|    DSF    |T|E|              Flow Label               |   DSF/Differentiated Services Field, E/ECT/Explicit Congestion Notification - Capable Transport, T/ECN-CE/Explicit Congestion Notification - Congestion Encountered
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
          \Traffic Class/
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -681,10 +698,13 @@ typedef struct _ipv4_hdr_
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 */
+#define IPV6_VTF_GET_BIT_FLOW_LABEL           0x000FFFFF   //Get Flow Label bits in VTF/VersionTrafficClassFlowLabel part.
+#define IPV6_VTF_GET_BIT_SERVER_FIXED         0xFFF00000   //Get all bits without Flow Label in VTF/VersionTrafficClassFlowLabel part.
 typedef struct _ipv6_hdr_
 {
-	union {
-		uint32_t               VerTcFlow;
+//	union {
+		uint32_t               VersionTrafficFlow;
+/* No need to define sub structure.
 		struct {
 		#if BYTE_ORDER == LITTLE_ENDIAN
 			union {
@@ -700,6 +720,7 @@ typedef struct _ipv6_hdr_
 					uint8_t    ECT:1;
 					uint8_t    ECN_CE:1;
 				}TrafficClassBits_Second;
+
 			};
 		#else //BIG_ENDIAN
 			uint8_t            Version:4;
@@ -718,14 +739,251 @@ typedef struct _ipv6_hdr_
 			uint8_t            FlowLabel_First:4;
 		#endif
 			uint16_t           FlowLabel_Second;
-		}VerTcFlowBits;
-	};
+		}VersionTrafficFlowBits;
+*/
+//	};
 	uint16_t                   PayloadLength;
 	uint8_t                    NextHeader;
 	uint8_t                    HopLimit;
 	in6_addr                   Source;
 	in6_addr                   Destination;
-}ipv6_hdr, *pipv6_hdr;
+}ipv6_hdr;
+
+/* Internet Protocol version 6/IPv6 header Hop-by-hop and Destination option
+* RFC 8200, Internet Protocol, Version 6 (IPv6) Specification(https://tools.ietf.org/html/rfc8200)
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Next Header  |ExtensionLength|      Option and Padding       |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                      Option and Padding                       |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/                 Option and Padding(Optional)                  /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+*/
+typedef struct _ipv6_extension_hop_by_hop_
+{
+	uint8_t                    NextHeader;
+	uint8_t                    ExtensionLength;
+	uint16_t                   OptionsPadding_A;
+	uint32_t                   OptionsPadding_B;
+//	uint8_t                    *OptionsPadding_C;
+}_ipv6_extension_destination_, ipv6_extension_hop_by_hop, ipv6_extension_destination;
+
+/* Internet Protocol version 6/IPv6 header Routing option
+* RFC 8200, Internet Protocol, Version 6 (IPv6) Specification(https://tools.ietf.org/html/rfc8200)
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Next Header  |ExtensionLength| Routing Type  | Segments Left |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                      Type-specific Data                       |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/                 Type-specific Data(Optional)                  /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+*/
+typedef struct _ipv6_extension_routing_
+{
+	uint8_t                    NextHeader;
+	uint8_t                    ExtensionLength;
+	uint8_t                    RoutingType;
+	uint8_t                    SegmentsLeft;
+	uint32_t                   TypeSpecificData_A;
+//	uint8_t                    *TypeSpecificData_B;
+}ipv6_extension_routing;
+
+/* Internet Protocol version 6/IPv6 header Fragment option
+* RFC 8200, Internet Protocol, Version 6 (IPv6) Specification(https://tools.ietf.org/html/rfc8200)
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Next Header  |   Reserved    |     Fragment Offset     |Res|M|   Res/Reserved, M/More Fragments follow
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                        Identification                         |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+*/
+#define IPV6_FRAGMENT_HEADER_GET_BIT_MF            0x0001   //Get More Fragment bit in Fragment Header.
+#define IPV6_FRAGMENT_HEADER_GET_FRAGMENT_OFFSET   0xFFF8   //Get Fragment Offset bits in Fragment Header.
+typedef struct _ipv6_extension_fragment_
+{
+	uint8_t                    NextHeader;
+	uint8_t                    Reserved_A;
+//	union {
+		uint16_t               Flags;
+/* No need to define sub structure.
+		struct {
+		#if BYTE_ORDER == LITTLE_ENDIAN
+			uint16_t           FragmentOffset_First:8;
+			uint16_t           MF:1;
+			uint16_t           Reserved_B:2;
+			uint16_t           FragmentOffset_Second:5;
+		#else //BIG_ENDIAN
+			uint16_t           FragmentOffset_First:8;
+			uint16_t           FragmentOffset_Second:5;
+			uint16_t           Reserved_B:2;
+			uint16_t           MF:1;
+		#endif
+		}FlagsBits;
+*/
+//	};
+	uint32_t                   ID;
+//	uint8_t                    *Fragment;
+}ipv6_extension_fragment;
+
+/* Internet Protocol version 6/IPv6 header Authentication Header option
+* RFC 6071, IP Security (IPsec) and Internet Key Exchange (IKE) Document Roadmap(https://tools.ietf.org/html/rfc6071)
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Next Header  |Payload Length |           Reserved            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                  Security Parameters Index                    |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                        Sequence Number                        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/                  Integrity Check Value (ICV)                  /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+*/
+typedef struct _ipv6_extension_ah_
+{
+	uint8_t                    NextHeader;
+	uint8_t                    PayloadLength;
+	uint16_t                   Reserved;
+	uint32_t                   SPI;
+	uint32_t                   Sequence;
+//	uint8_t                    *ICV;
+}ipv6_extension_ah;
+
+/* Internet Protocol version 6/IPv6 header Encapsulating Security Payload option
+* RFC 6071, IP Security (IPsec) and Internet Key Exchange (IKE) Document Roadmap(https://tools.ietf.org/html/rfc6071)
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                  Security Parameters Index                    |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                        Sequence Number                        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/                         Payload Data                          /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/          Payload Data         /Padding Length |  Next Header  |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/                  Integrity Check Value (ICV)                  /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+*/
+typedef struct _ipv6_extension_esp_
+{
+	uint32_t                   SPI;
+	uint32_t                   Sequence;
+//	uint8_t                    *Payload;
+//	uint8_t                    PaddingLength;
+//	uint8_t                    NextHeader;
+//	uint8_t                    *ICV;
+}ipv6_extension_esp;
+
+/* Internet Protocol version 6/IPv6 header Mobility option
+* RFC 6275, Mobility Support in IPv6(https://tools.ietf.org/html/rfc6275)
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|PayloadProtocol| Header Length |    MT Type    |   Reserved    |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|           Checksum            |         Message Data          |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/                    Message Data(Optional)                     /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+*/
+typedef struct _ipv6_extension_mobility_
+{
+	uint8_t                    PayloadProtocol;
+	uint8_t                    HeaderLength;
+	uint8_t                    MT_Type;
+	uint8_t                    Reserved;
+	uint16_t                   Checksum;
+	uint16_t                   MessageData_A;
+//	uint8_t                    *MessageData_B;
+}ipv6_extension_mobility;
+
+/* Internet Protocol version 6/IPv6 header HIP option
+* RFC 7401, Host Identity Protocol Version 2 (HIPv2)(https://tools.ietf.org/html/rfc7401)
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Next Header  | Header Length |0| Packet Type |Version| Res |1|
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|           Checksum            |           Controls            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+|               Sender's Host Identity Tag (HIT)                |
+|                                                               |
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+|              Receiver's Host Identity Tag (HIT)               |
+|                                                               |
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+*/
+typedef struct _ipv6_extension_hip_
+{
+	uint8_t                    NextHeader;
+	uint8_t                    HeaderLength;
+//	union {
+		uint16_t               Flags;
+/* No need to define sub structure.
+		struct {
+		#if BYTE_ORDER == LITTLE_ENDIAN
+			uint16_t           PacketType:7;
+			uint16_t           FixedPart_A:1;
+			uint16_t           FixedPart_B:1;
+			uint16_t           Reserved:3;
+			uint16_t           Version:4;
+		#else //BIG_ENDIAN
+			uint16_t           FixedPart_A:1;
+			uint16_t           PacketType:7;
+			uint16_t           Version:4;
+			uint16_t           Reserved:3;
+			uint16_t           FixedPart_B:1;
+		#endif
+		}FlagsBits;
+*/
+//	};
+	uint16_t                   Checksum;
+	uint16_t                   Controls;
+	uint64_t                   SenderHIP[2U];
+	uint64_t                   ReceiverHIP[2U];
+//	uint8_t                    *HIP_Parameter;
+}ipv6_extension_hip;
+
+/* Internet Protocol version 6/IPv6 header Shim6 option
+* RFC 5533, Shim6: Level 3 Multihoming Shim Protocol for IPv6(https://tools.ietf.org/html/rfc5533)
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|  Next Header  | Header Length |P|
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+*/
+typedef struct _ipv6_extension_shim6_
+{
+	uint8_t                    NextHeader;
+	uint8_t                    HeaderLength;
+//	uint8_t                    *PayloadExtension;
+}ipv6_extension_shim6;
 
 /* Internet Control Message Protocol/ICMP header
 * RFC 792, INTERNET CONTROL MESSAGE PROTOCOL(https://tools.ietf.org/html/rfc792)
@@ -752,14 +1010,14 @@ typedef struct _icmp_hdr_
 	uint16_t               Checksum;
 	uint16_t               ID;
 	uint16_t               Sequence;
-//ICMP Timestamp option is defalut enable in Linux and Mac OS X/macOS.
+//Linux and macOS: ICMP Timestamp option is defalut enabled.
 #if defined(PLATFORM_LINUX)
 	uint64_t               Timestamp;
 	uint64_t               Nonce;
-#elif defined(PLATFORM_MACX)
+#elif (defined(PLATFORM_FREEBSD) || defined(PLATFORM_MACOS))
 	uint64_t               Timestamp;
 #endif
-}icmp_hdr, *picmp_hdr;
+}icmp_hdr;
 
 /* Internet Control Message Protocol version 6/ICMPv6 header
 * RFC 4443, Internet Control Message Protocol (ICMPv6) for the Internet Protocol Version 6 (IPv6) Specification(https://tools.ietf.org/html/rfc4443)
@@ -775,10 +1033,11 @@ typedef struct _icmp_hdr_
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 */
-#define ICMPV6_TYPE_REQUEST    128U
-#define ICMPV6_TYPE_REPLY      129U
-#define ICMPV6_CODE_REQUEST    0
-#define ICMPV6_CODE_REPLY      0
+#define ICMPV6_OFFSET_CHECKSUM   2U
+#define ICMPV6_TYPE_REQUEST      128U
+#define ICMPV6_TYPE_REPLY        129U
+#define ICMPV6_CODE_REQUEST      0
+#define ICMPV6_CODE_REPLY        0
 typedef struct _icmpv6_hdr_
 {
 	uint8_t                Type;
@@ -786,14 +1045,14 @@ typedef struct _icmpv6_hdr_
 	uint16_t               Checksum;
 	uint16_t               ID;
 	uint16_t               Sequence;
-//ICMPv6 Timestamp option is defalut enable in Linux and Mac OS X/macOS.
+//Linux and macOS: ICMPv6 Timestamp option is defalut enabled.
 #if defined(PLATFORM_LINUX)
 	uint64_t               Timestamp;
 	uint64_t               Nonce;
-#elif defined(PLATFORM_MACX)
+#elif (defined(PLATFORM_FREEBSD) || defined(PLATFORM_MACOS))
 	uint64_t               Timestamp;
 #endif
-}icmpv6_hdr, *picmpv6_hdr;
+}icmpv6_hdr;
 
 /* Transmission Control Protocol/TCP header
 * RFC 675, SPECIFICATION OF INTERNET TRANSMISSION CONTROL PROGRAM(https://tools.ietf.org/html/rfc675)
@@ -822,9 +1081,9 @@ typedef struct _icmpv6_hdr_
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |                     Acknowledgment Number                     |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-| Data  |  R  |N|C|E|U|A|P|R|S|F|                               |  RES/Reserved
-|Offset |  E  |S|W|C|R|C|S|S|Y|I|          Window Size          |  NS/ECN-nonce concealment protection, CWR/Congestion Window Reduced, ECE/ECN-Echo indicates, URG/Urgent pointer, ACK/Acknowledgment
-|       |  S  | |R|E|G|K|H|T|N|N|                               |  PSH/Push function, RST/Reset the connection, SYN/Synchronize sequence numbers, FIN/No more data from sender
+| Data  |  R  |N|C|E|U|A|P|R|S|F|                               |   RES/Reserved
+|Offset |  E  |S|W|C|R|C|S|S|Y|I|          Window Size          |   NS/ECN-nonce concealment protection, CWR/Congestion Window Reduced, ECE/ECN-Echo indicates, URG/Urgent pointer, ACK/Acknowledgment
+|       |  S  | |R|E|G|K|H|T|N|N|                               |   PSH/Push function, RST/Reset the connection, SYN/Synchronize sequence numbers, FIN/No more data from sender
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |           Checksum            |        Urgent Pointer         |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -834,20 +1093,20 @@ typedef struct _icmpv6_hdr_
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 */
-#define TCP_STANDARD_IHL      5U       //Standard TCP header length
-#define TCP_IHL_BYTES_TIMES   4U       //IHL is number of 32-bit words(4 bytes).
-#define TCP_GET_BIT_IHL       0xF000   //Get Data Offset in TCP IHL
-#define TCP_GET_BIT_FLAG      0x0FFF   //Get TCP flag bits
-#define TCP_GET_BIT_CWR       0x0080   //Get Congestion Window Reduced bit in TCP flags
-#define TCP_GET_BIT_ECE       0x0040   //Get ECN-Echo indicates bit in TCP flags
-#define TCP_STATUS_RST        0x0004   //TCP status: RST
-#define TCP_STATUS_ACK        0x0010   //TCP status: ACK
-#define TCP_STATUS_FIN_ACK    0x0011   //TCP status: FIN, ACK
-#define TCP_STATUS_SYN_ACK    0x0012   //TCP status: SYN, ACK
-#define TCP_STATUS_PSH_ACK    0x0018   //TCP status: PSH, ACK
+#define TCP_IHL_STANDARD        5U       //Standard TCP header length
+#define TCP_IHL_BYTES_SET       4U       //IHL is set of 32-bit words, in 4 bytes
+#define TCP_FLAG_GET_BIT_IHL    0xF000   //Get data offset in TCP IHL
+#define TCP_FLAG_GET_BIT_FLAG   0x0FFF   //Get bits in TCP flag
+#define TCP_FLAG_GET_BIT_CWR    0x0080   //Get Congestion Window Reduced bit in TCP flags
+#define TCP_FLAG_GET_BIT_ECE    0x0040   //Get ECN-Echo indicates bit in TCP flags
+#define TCP_STATUS_RST          0x0004   //TCP status: RST
+#define TCP_STATUS_ACK          0x0010   //TCP status: ACK
+#define TCP_STATUS_FIN_ACK      0x0011   //TCP status: FIN, ACK
+#define TCP_STATUS_SYN_ACK      0x0012   //TCP status: SYN, ACK
+#define TCP_STATUS_PSH_ACK      0x0018   //TCP status: PSH, ACK
 
 //Port definitions(1 - 1024, well-known ports)
-//About this list, see IANA Service Name and Transport Protocol Port Number Registry(https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml)
+//About this list, please visit IANA Service Name and Transport Protocol Port Number Registry(https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml)
 #ifndef IPPORT_TCPMUX
 	#define IPPORT_TCPMUX               1U
 #endif
@@ -1100,6 +1359,9 @@ typedef struct _icmpv6_hdr_
 #ifndef IPPORT_AODV
 	#define IPPORT_AODV                 654U
 #endif
+#ifndef IPPORT_DNS_TLS
+	#define IPPORT_DNS_TLS              853U
+#endif
 #ifndef IPPORT_FTPSDATA
 	#define IPPORT_FTPSDATA             989U
 #endif
@@ -1114,51 +1376,53 @@ typedef struct _icmpv6_hdr_
 #endif
 typedef struct _tcp_hdr_
 {
-	uint16_t               SrcPort;
-	uint16_t               DstPort;
+	uint16_t               SourcePort;
+	uint16_t               DestinationPort;
 	uint32_t               Sequence;
 	uint32_t               Acknowledge;
-	union {
-		uint16_t               HeaderLength_Flags;
+//	union {
+		uint16_t           HeaderLength_Flags;
+/* No need to define sub structure.
 		struct {
 		#if BYTE_ORDER == LITTLE_ENDIAN
-			uint8_t                Nonce:1;
-			uint8_t                Reserved:3;
-			uint8_t                HeaderLength:4;
-			uint8_t                FIN:1;
-			uint8_t                SYN:1;
-			uint8_t                RST:1;
-			uint8_t                PSH:1;
-			uint8_t                ACK:1;
-			uint8_t                URG:1;
-			uint8_t                ECE:1;
-			uint8_t                CWR:1;
+			uint8_t        Nonce:1;
+			uint8_t        Reserved:3;
+			uint8_t        HeaderLength:4;
+			uint8_t        FIN:1;
+			uint8_t        SYN:1;
+			uint8_t        RST:1;
+			uint8_t        PSH:1;
+			uint8_t        ACK:1;
+			uint8_t        URG:1;
+			uint8_t        ECE:1;
+			uint8_t        CWR:1;
 		#else //BIG_ENDIAN
-			uint8_t                HeaderLength:4;
-			uint8_t                Reserved:3;
-			uint8_t                Nonce:1;
-			uint8_t                CWR:1;
-			uint8_t                ECE:1;
-			uint8_t                URG:1;
-			uint8_t                ACK:1;
-			uint8_t                PSH:1;
-			uint8_t                RST:1;
-			uint8_t                SYN:1;
-			uint8_t                FIN:1;
+			uint8_t        HeaderLength:4;
+			uint8_t        Reserved:3;
+			uint8_t        Nonce:1;
+			uint8_t        CWR:1;
+			uint8_t        ECE:1;
+			uint8_t        URG:1;
+			uint8_t        ACK:1;
+			uint8_t        PSH:1;
+			uint8_t        RST:1;
+			uint8_t        SYN:1;
+			uint8_t        FIN:1;
 		#endif
 		}HeaderLength_FlagsBits;
-	};
+*/
+//	};
 	uint16_t               Windows;
 	uint16_t               Checksum;
 	uint16_t               UrgentPointer;
-}tcp_hdr, *ptcp_hdr;
+}tcp_hdr;
 
 /* User Datagram Protocol/UDP header
 * RFC 768, User Datagram Protocol(https://tools.ietf.org/html/rfc768)
-* RFC 2460, Internet Protocol, Version 6 (IPv6) Specification(https://tools.ietf.org/html/rfc2460)
 * RFC 2675, IPv6 Jumbograms(https://tools.ietf.org/html/rfc2675)
 * RFC 4113, Management Information Base for the UDP(https://tools.ietf.org/html/rfc4113)
 * RFC 5405, Unicast UDP Usage Guidelines for Application Designers(https://tools.ietf.org/html/rfc5405)
+* RFC 8200, Internet Protocol, Version 6 (IPv6) Specification(https://tools.ietf.org/html/rfc8200)
 
                     1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
@@ -1172,11 +1436,11 @@ typedef struct _tcp_hdr_
 #define IPPORT_TEREDO      3544U        //Teredo tunneling port
 typedef struct _udp_hdr_
 {
-	uint16_t               SrcPort;
-	uint16_t               DstPort;
+	uint16_t               SourcePort;
+	uint16_t               DestinationPort;
 	uint16_t               Length;
 	uint16_t               Checksum;
-}udp_hdr, *pudp_hdr;
+}udp_hdr;
 
 /* Transmission Control Protocol/TCP and User Datagram Protocol/UDP Pseudo header with IPv4
 
@@ -1198,7 +1462,7 @@ typedef struct _ipv4_psd_hdr_
 	uint8_t               Zero;
 	uint8_t               Protocol;
 	uint16_t              Length;
-}ipv4_psd_hdr, *pipv4_psd_hdr;
+}ipv4_psd_hdr;
 
 /* Internet Control Message Protocol version 6/ICMPv6, Transmission Control Protocol/TCP and User Datagram Protocol/UDP Pseudo header with IPv4
 
@@ -1228,7 +1492,7 @@ typedef struct _ipv6_psd_hdr_
 	uint32_t              Length;
 	uint8_t               Zero[3U];
 	uint8_t               NextHeader;
-}ipv6_psd_hdr, *pipv6_psd_hdr;
+}ipv6_psd_hdr;
 
 
 //Domain Name System/DNS part
@@ -1304,12 +1568,16 @@ typedef struct _ipv6_psd_hdr_
 * RFC 6698, The DNS-Based Authentication of Named Entities (DANE) Transport Layer Security (TLS) Protocol: TLSA(https://tools.ietf.org/html/rfc6698)
 * RFC 6742, DNS Resource Records for the Identifier-Locator Network Protocol (ILNP)(https://tools.ietf.org/html/rfc6742)
 * RFC 6844, DNS Certification Authority Authorization (CAA) Resource Record(https://tools.ietf.org/html/rfc6844)
+* RFC 6891, Extension Mechanisms for DNS (EDNS(0))(https://tools.ietf.org/html/rfc6891)
 * RFC 6975, Signaling Cryptographic Algorithm Understanding in DNS Security Extensions (DNSSEC)(https://tools.ietf.org/html/rfc6975)
 * RFC 7043, Resource Records for EUI-48 and EUI-64 Addresses in the DNS(https://tools.ietf.org/html/rfc7043)
 * RFC 7314, Extension Mechanisms for DNS (EDNS) EXPIRE Option(https://tools.ietf.org/html/rfc7314)
+* RFC 7766, DNS Transport over TCP - Implementation Requirements(https://tools.ietf.org/html/rfc7766)
+* RFC 7871, Client Subnet in DNS Queries(https://tools.ietf.org/html/rfc7871)
+* RFC 7873, Domain Name System (DNS) Cookies(https://tools.ietf.org/html/rfc7873)
 */
 
-//About this list, see IANA Domain Name System (DNS) Parameters(https://www.iana.org/assignments/dns-parameters/dns-parameters.xhtml)
+//About this list, please visit IANA Domain Name System (DNS) Parameters(https://www.iana.org/assignments/dns-parameters/dns-parameters.xhtml)
 //Port and Flags definitions
 #ifndef IPPORT_DNS
 	#define IPPORT_DNS                    53U        //Standard DNS(TCP and UDP) Port
@@ -1320,32 +1588,35 @@ typedef struct _ipv6_psd_hdr_
 #ifndef IPPORT_LLMNR
 	#define IPPORT_LLMNR                  5355U      //Link-Local Multicast Name Resolution/LLMNR Port
 #endif
-#define DNS_STANDARD                  0x0100     //System Standard query flag
-#define DNS_SQR_NE                    0x8180     //Standard query response and No Error.
-#define DNS_SQR_NEA                   0x8580     //Standard query response, No Error and Authoritative.
-#define DNS_SQR_NETC                  0x8380     //Standard query response and No Error, but Truncated.
-#define DNS_SQR_FE                    0x8181     //Standard query response, Format Error
-#define DNS_SQR_SF                    0x8182     //Standard query response, Server failure
-#define DNS_SQR_SNH                   0x8183     //Standard query response, No Such Name
-#define DNS_GET_BIT_RESPONSE          0x8000     //Get Response bit in DNS flags.
-#define DNS_GET_BIT_OPCODE            0x7800     //Get OPCode in DNS flags.
-#define DNS_GET_BIT_AA                0x0400     //Get Authoritative bit in DNS flags.
-#define DNS_GET_BIT_TC                0x0200     //Get Truncated bit in DNS flags.
-#define DNS_GET_BIT_RD                0x0100     //Get Recursion Desired bit in DNS flags.
-#define DNS_GET_BIT_Z                 0x0040     //Get Reserved bit in DNS flags.
-#define DNS_GET_BIT_AD                0x0020     //Get Authentic Data bit in DNS flags.
-#define DNS_GET_BIT_CD                0x0010     //Get Checking Disabled bit in DNS flags.
-#define DNS_GET_BIT_RCODE             0x000F     //Get RCode in DNS flags.
-#define DNS_SET_R                     0x8000     //Set Response bit.
-#define DNS_SET_R_TC                  0x8200     //Set Response bit and Truncated bit.
-#define DNS_SER_R_A                   0x8580     //Set Response bit and Authoritative bit.
-#define DNS_SET_R_FE                  0x8001     //Set Response bit and Format Error RCode.
-#define DNS_SET_R_SNH                 0x8003     //Set Response bit and No Such Name RCode.
-#define DNS_POINTER_8_BITS            0xC0       //DNS compression pointer(11000000)
-#define DNS_POINTER_16_BITS           0xC000     //DNS compression pointer(1100000000000000)
-#define DNS_POINTER_8_BITS_STRING     ('\xC0')   //DNS compression pointer string
-#define DNS_POINTER_BITS_GET_LOCATE   0x3FFF     //Get location of DNS compression pointer(00111111111111111)
-#define DNS_POINTER_QUERY             0xC00C     //Pointer of first query
+#define DNS_FLAG_REQUEST_STANDARD        0x0100       //Standard request
+#define DNS_FLAG_SQR_NE                  0x8180       //Standard query response and No Error.
+#define DNS_FLAG_SQR_NEA                 0x8580       //Standard query response, No Error and Authoritative.
+#define DNS_FLAG_SQR_NETC                0x8380       //Standard query response and No Error, but Truncated.
+#define DNS_FLAG_SQR_FE                  0x8181       //Standard query response, Format Error
+#define DNS_FLAG_SQR_SF                  0x8182       //Standard query response, Server failure
+#define DNS_FLAG_SQR_SNH                 0x8183       //Standard query response, No Such Name
+#define DNS_FLAG_GET_BIT_RESPONSE        0x8000       //Get Response bit in DNS flags.
+#define DNS_FLAG_GET_BIT_OPCODE          0x7800       //Get OPCode in DNS flags.
+#define DNS_FLAG_GET_BIT_AA              0x0400       //Get Authoritative bit in DNS flags.
+#define DNS_FLAG_GET_BIT_TC              0x0200       //Get Truncated bit in DNS flags.
+#define DNS_FLAG_GET_BIT_RD              0x0100       //Get Recursion Desired bit in DNS flags.
+#define DNS_FLAG_GET_BIT_RA              0x0080       //Get Recursion Available bit in DNS flags.
+#define DNS_FLAG_GET_BIT_Z               0x0040       //Get Reserved bit in DNS flags.
+#define DNS_FLAG_GET_BIT_AD              0x0020       //Get Authentic Data bit in DNS flags.
+#define DNS_FLAG_GET_BIT_CD              0x0010       //Get Checking Disabled bit in DNS flags.
+#define DNS_FLAG_GET_BIT_RCODE           0x000F       //Get RCode in DNS flags.
+#define DNS_FLAG_GET_BIT_SERVER_FIXED    0xF8C0       //Get all bits without AA/Authoritative Answer, TC/Truncated, RD/Recursion Desired, AD/Authenticated Data, CD/Checking Disabled, and RCode/Return Code in DNS flags.
+#define DNS_FLAG_SET_R                   0x8000       //Set Response bit in DNS flags.
+#define DNS_FLAG_SET_R_TC                0x8200       //Set Response bit and Truncated bit in DNS flags.
+#define DNS_FLAG_SET_R_A                 0x8580       //Set Response bit and Authoritative bit in DNS flags.
+#define DNS_FLAG_SET_R_FE                0x8001       //Set Response bit and Format Error RCode in DNS flags.
+#define DNS_FLAG_SET_R_SNH               0x8003       //Set Response bit and No Such Name RCode in DNS flags.
+#define DNS_POINTER_8_BITS               0xC0         //DNS compression pointer(11000000)
+#define DNS_POINTER_16_BITS              0xC000       //DNS compression pointer(1100000000000000)
+#define DNS_POINTER_8_BIT_STRING         ('\xC0')     //DNS compression pointer string
+#define DNS_POINTER_BIT_GET_LOCATE       0x3FFF       //Get location of DNS compression pointer(00111111111111111)
+#define DNS_POINTER_QUERY                0xC00C       //Pointer of first query
+#define DNS_RECORD_TTL_GET_BIT_HIGHEST   0x80000000   //Get highest 1 bit in TTL.
 
 //OPCode definitions
 #ifndef DNS_OPCODE_QUERY
@@ -1371,11 +1642,14 @@ typedef struct _ipv6_psd_hdr_
 #endif
 
 //Classes definitions
+#ifndef DNS_CLASS_RESERVED
+	#define DNS_CLASS_RESERVED      0                //DNS RESERVED Classes is 0.
+#endif
 #ifndef DNS_CLASS_INTERNET
 	#define DNS_CLASS_INTERNET      0x0001           //DNS INTERNET Classes is 1.
 #endif
 #ifndef DNS_CLASS_CSNET
-	#define DNS_CLASS_CSNET         0x0002           //DNS CSNET Classes is 2.
+	#define DNS_CLASS_CSNET         0x0002           //DNS CSNET Classes is 2(Obsolete).
 #endif
 #ifndef DNS_CLASS_CHAOS
 	#define DNS_CLASS_CHAOS         0x0003           //DNS CHAOS Classes is 3.
@@ -1448,6 +1722,9 @@ typedef struct _ipv6_psd_hdr_
 #ifndef DNS_RCODE_BADTRUNC
 	#define DNS_RCODE_BADTRUNC      0x0016           //RCode Bad Truncation is 22.
 #endif
+#ifndef DNS_RCODE_BADCOOKIE
+	#define DNS_RCODE_BADCOOKIE     0x0017           //RCode Bad Cookie is 23.
+#endif
 #ifndef DNS_RCODE_PRIVATE_A
 	#define DNS_RCODE_PRIVATE_A     0xFF00           //DNS Reserved Private use RCode is begin at 3841.
 #endif
@@ -1502,7 +1779,7 @@ typedef struct _ipv6_psd_hdr_
 	#define DNS_TYPE_MX           0x000F             //DNS Type MX is 15.
 #endif
 #ifndef DNS_TYPE_TEXT
-	#define DNS_TYPE_TEXT          0x0010             //DNS Type TXT is 16.
+	#define DNS_TYPE_TEXT         0x0010             //DNS Type TXT is 16.
 #endif
 #ifndef DNS_TYPE_RP
 	#define DNS_TYPE_RP           0x0011             //DNS Type RP is 17.
@@ -1523,7 +1800,7 @@ typedef struct _ipv6_psd_hdr_
 	#define DNS_TYPE_NSAP         0x0016             //DNS Type NSAP is 22.
 #endif
 #ifndef DNS_TYPE_NSAPPTR
-	#define DNS_TYPE_NSAPPTR     0x0017             //DNS Type NSAPPTR is 23(Obsolete).
+	#define DNS_TYPE_NSAPPTR      0x0017             //DNS Type NSAPPTR is 23(Obsolete).
 #endif
 #ifndef DNS_TYPE_SIG
 	#define DNS_TYPE_SIG          0x0018             //DNS Type SIG is 24.
@@ -1712,15 +1989,14 @@ typedef struct _ipv6_psd_hdr_
 	#define DNS_TYPE_RESERVED     0xFFFF             //DNS Reserved records is 65535.
 #endif
 
-
 /* Domain Name System/DNS header
 //With User Datagram Protocol/UDP
 
                     1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|        Identification         |Q|OPCode |A|T|R|R|Z|A|C| RCode |  QR/Query and Response, AA/Authoritative Answer, TC/Truncated, RD/Recursion Desired, RA/Recursion Available
-|                               |R|       |A|C|D|A| |D|D|       |  Z/Zero, AD/Authenticated Data, CD/Checking Disabled, RCode/Return Code
+|        Identification         |Q|OPCode |A|T|R|R|Z|A|C| RCode |   QR/Query and Response, AA/Authoritative Answer, TC/Truncated, RD/Recursion Desired, RA/Recursion Available
+|                               |R|       |A|C|D|A| |D|D|       |   Z/Zero, AD/Authenticated Data, CD/Checking Disabled, RCode/Return Code
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |        Total Questions        |       Total Answer RRs        |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -1728,12 +2004,13 @@ typedef struct _ipv6_psd_hdr_
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 */
-#define DNS_PACKET_MAXSIZE_TRADITIONAL   512U   //Traditional DNS packet maximum size(512 bytes)
+#define DNS_PACKET_MAXSIZE_TRADITIONAL   512U   //Traditional DNS packet maximum size, in bytes
 typedef struct _dns_hdr_
 {
 	uint16_t              ID;
-	union {
+//	union {
 		uint16_t          Flags;
+/* No need to define sub structure.
 		struct {
 		#if BYTE_ORDER == LITTLE_ENDIAN
 			uint8_t       RD:1;
@@ -1760,12 +2037,13 @@ typedef struct _dns_hdr_
 			uint8_t       RCode:4;
 		#endif
 		}FlagsBits;
-	};
+*/
+//	};
 	uint16_t              Question;
 	uint16_t              Answer;
 	uint16_t              Authority;
 	uint16_t              Additional;
-}dns_hdr, *pdns_hdr;
+}dns_hdr;
 
 /* Domain Name System/DNS header
 //With Transmission Control Protocol/TCP
@@ -1775,8 +2053,8 @@ typedef struct _dns_hdr_
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |            Length             |        Identification         |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|Q|OPCode |A|T|R|R|Z|A|C| RCode |        Total Questions        |  QR/Query and Response, AA/Authoritative Answer, TC/Truncated, RD/Recursion Desired, RA/Recursion Available
-|R|       |A|C|D|A| |D|D|       |                               |  Z/Zero, AD/Authenticated Data, CD/Checking Disabled, RCode/Return Code
+|Q|OPCode |A|T|R|R|Z|A|C| RCode |        Total Questions        |   QR/Query and Response, AA/Authoritative Answer, TC/Truncated, RD/Recursion Desired, RA/Recursion Available
+|R|       |A|C|D|A| |D|D|       |                               |   Z/Zero, AD/Authenticated Data, CD/Checking Disabled, RCode/Return Code
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |       Total Answer RRs        |      Total Authority RRs      |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -1788,8 +2066,9 @@ typedef struct _dns_tcp_hdr_
 {
 	uint16_t              Length;
 	uint16_t              ID;
-	union {
+//	union {
 		uint16_t          Flags;
+/* No need to define sub structure.
 		struct {
 		#if BYTE_ORDER == LITTLE_ENDIAN
 			uint8_t       RD:1;
@@ -1816,12 +2095,13 @@ typedef struct _dns_tcp_hdr_
 			uint8_t       RCode:4;
 		#endif
 		}FlagsBits;
-	};
+*/
+//	};
 	uint16_t              Question;
 	uint16_t              Answer;
 	uint16_t              Authority;
 	uint16_t              Additional;
-}dns_tcp_hdr, *pdns_tcp_hdr;
+}dns_tcp_hdr;
 
 /* Domain Name System/DNS Query
 
@@ -1841,7 +2121,7 @@ typedef struct _dns_qry_
 //	uint8_t               *Name;
 	uint16_t              Type;
 	uint16_t              Classes;
-}dns_qry, *pdns_qry;
+}dns_qry;
 
 /* Domain Name System/DNS Standard Resource Records
 
@@ -1849,13 +2129,15 @@ typedef struct _dns_qry_
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 /                                                               /
-/                             Name                              /
+/                            Domain                             /
 /                                                               /
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|             Type              |           Classes             |
+|             Type              |            Classes            |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|         Time To Live          |            Length             |
+|                         Time To Live                          |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|            Length             |                               /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               /
 /                                                               /
 /                             Data                              /
 /                                                               /
@@ -1870,7 +2152,7 @@ typedef struct _dns_record_standard_
 	uint32_t              TTL;
 	uint16_t              Length;
 //	uint8_t               *Data;
-}dns_record_standard, *pdns_record_standard;
+}dns_record_standard;
 
 /* Domain Name System/DNS A(IPv4) Records
 
@@ -1898,8 +2180,8 @@ typedef struct _dns_record_a_
 	uint16_t              Classes;
 	uint32_t              TTL;
 	uint16_t              Length;
-	in_addr               Addr;
-}dns_record_a, *pdns_record_a;
+	in_addr               Address;
+}dns_record_a;
 
 /* Domain Name System/DNS Canonical Name/CNAME Records
 
@@ -1930,7 +2212,7 @@ typedef struct _dns_record_cname_
 	uint32_t              TTL;
 	uint16_t              Length;
 //	uint8_t               *PrimaryName;
-}dns_record_cname, *pdns_record_cname;
+}dns_record_cname;
 
 /* Domain Name System/DNS Start Of a zone of Authority/SOA Resource Records
 
@@ -1966,14 +2248,14 @@ typedef struct _dns_record_soa_
 	uint32_t              RetryInterval;
 	uint32_t              ExpireLimit;
 	uint32_t              MinimumTTL;
-}dns_record_soa, *pdns_record_soa;
+}dns_record_soa;
 
 /* Domain Name System/DNS Pointer/PTR Records
 
                     1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|            Pointer            |             Type              |
+|             Name              |             Type              |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |            Classes            |         Time To Live          |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -1987,13 +2269,13 @@ typedef struct _dns_record_soa_
 */
 typedef struct _dns_record_ptr_
 {
-	uint16_t              PTR;
+	uint16_t              Pointer;
 	uint16_t              Type;
 	uint16_t              Classes;
 	uint32_t              TTL;
 	uint16_t              Length;
 //	uint8_t               *Name;
-}dns_record_ptr, *pdns_record_ptr;
+}dns_record_ptr;
 
 /* Domain Name System/DNS Mail eXchange/MX Resource Records
 
@@ -2012,9 +2294,9 @@ typedef struct _dns_record_mx_
 {
 	uint16_t              Preference;
 //	uint8_t               MailExchangeName;
-}dns_record_mx, *pdns_record_mx;
+}dns_record_mx;
 
-/* Domain Name System/DNS Test Strings/TXT Records
+/* Domain Name System/DNS Text Strings/TXT Records
 
                     1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
@@ -2042,14 +2324,14 @@ typedef struct _dns_record_txt_
 	uint16_t              Length;
 	uint8_t               TXT_Length;
 //	uint8_t               *TXT;
-}dns_record_txt, *pdns_record_txt;
+}dns_record_txt;
 
 /* Domain Name System/DNS AAAA(IPv6) Records
 
                     1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|            Pointer            |             Type              |
+|             Name              |             Type              |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |            Classes            |         Time To Live          |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -2068,8 +2350,8 @@ typedef struct _dns_record_aaaa_
 	uint16_t              Classes;
 	uint32_t              TTL;
 	uint16_t              Length;
-	in6_addr              Addr;
-}dns_record_aaaa, *pdns_record_aaaa;
+	in6_addr              Address;
+}dns_record_aaaa;
 
 /* Domain Name System/DNS Server Selection/SRV Resource Records
 
@@ -2092,36 +2374,56 @@ typedef struct _dns_record_srv_
 	uint16_t             Weight;
 	uint16_t             Port;
 //	uint8_t              *Target;
-}dns_record_srv, *pdns_record_srv;
+}dns_record_srv;
 
 /* Extension Mechanisms for Domain Name System/DNS, EDNS Label/OPT Resource Records
 
                     1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-/                                                               /
-/                            Domain                             /
-/                                                               /
+|     Name      |             Type              |UDP PayloadSize|
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|             Type              |       UDP Payload Size        |
+|UDP PayloadSize|Extended RCode | EDNS Version  |D|  Reserved   |   Extended RCode/Higher bits in extended Return Code, D/DO/DNSSEC OK bit
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|Extended RCode |EDNS Version |D|           Reserved            |  Extended RCode/Higher bits in extended Return Code, D/DO bit
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|            Length             |\---------- Z Field -----------/
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|   Reserved    |            Length             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 */
-#define EDNS_PACKET_MINSIZE    1220U
-#define EDNS_GET_BIT_DO        0x8000        //Get DO bit in Z field.
+//Code definitions
+#define EDNS_VERSION_ZERO          0
+#define EDNS_PACKET_MINSIZE        1220U
+#define EDNS_PACKET_MAXSIZE        4096U
+#define EDNS_FLAG_GET_BIT_DO       0x8000        //Get DO bit in Z field.
+
+//EDNS Code definitions
+#define EDNS_CODE_LLQ              0x0001        //Long-lived query
+#define EDNS_CODE_UL               0x0002        //Update lease
+#define EDNS_CODE_NSID             0x0003        //Name Server Identifier (RFC 5001)
+#define EDNS_CODE_OWNER            0x0004        //Owner, reserved
+#define EDNS_CODE_DAU              0x0005        //DNSSEC Algorithm Understood (RFC 6975)
+#define EDNS_CODE_DHU              0x0006        //DS Hash Understood (RFC 6975)
+#define EDNS_CODE_N3U              0x0007        //DSEC3 Hash Understood (RFC 6975)
+#define EDNS_CODE_CSUBNET          0x0008        //Client subnet (RFC 7871)
+#define EDNS_CODE_EDNS_EXPIRE      0x0009        //EDNS Expire (RFC 7314)
+#define EDNS_CODE_COOKIES          0x000A        //DNS Cookies (RFC 7873)
+#define EDNS_CODE_TCP_KEEPALIVE    0x000B        //EDNS TCP Keepalive (RFC 7828)
+#define EDNS_CODE_PADDING          0x000C        //EDNS Padding (RFC 7830)
+#define EDNS_CODE_CHAIN            0x000D        //DNS CHAIN Query (RFC 7901)
+#define EDNS_CODE_KEY_TAG          0x000E        //DNSSEC Key Tag (RFC 8145)
+
+//Address Family Numbers, please visit https://www.iana.org/assignments/address-family-numbers/address-family-numbers.xhtml.
+#define EDNS_ADDRESS_FAMILY_IPV4   0x0001
+#define EDNS_ADDRESS_FAMILY_IPV6   0x0002
 typedef struct _dns_record_opt_
 {
 	uint8_t               Name;
 	uint16_t              Type;
-	uint16_t              UDPPayloadSize;
+	uint16_t              UDP_PayloadSize;
 	uint8_t               Extended_RCode;
 	uint8_t               Version;
-	union {
+//	union {
 		uint16_t          Z_Field;
+/* No need to define sub structure.
 		struct {
 		#if BYTE_ORDER == LITTLE_ENDIAN
 			uint8_t       Reserved_First:7;
@@ -2132,12 +2434,33 @@ typedef struct _dns_record_opt_
 		#endif
 			uint8_t       Reserved_Second;
 		}Z_Bits;
-	};
+*/
+//	};
 	uint16_t              DataLength;
-}dns_record_opt, *pdns_record_opt, edns_header, *pedns_header;
+}dns_record_opt, edns_header;
 
-/* Extension Mechanisms for Domain Name System/DNS, Client subnet in EDNS requests
-* Client Subnet in DNS Requests draft-vandergaast-edns-client-subnet-02(https://tools.ietf.org/html/draft-ietf-dnsop-edns-client-subnet-08)
+/* Extension Mechanisms for Domain Name System/EDNS Data Option
+                    1                   2                   3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                             Code                              |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                            Length                             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/                                                               /
+/                             Data                              /
+/                                                               /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*/
+typedef struct _edns_data_option_
+{
+	uint16_t              Code;
+	uint16_t              Length;
+//	uint8_t               *Data;
+}edns_data_option;
+
+/* Extension Mechanisms for Domain Name System/DNS, Client Subnet in EDNS request
+* RFC 7871, Client Subnet in DNS Queries(https://tools.ietf.org/html/rfc7871)
 
                     1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
@@ -2145,26 +2468,16 @@ typedef struct _dns_record_opt_
 |             Code              |            Length             |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |            Family             |Source Netmask | Scope Netmask |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ 
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 /                                                               /
 /                           Address                             /
 /                                                               /
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 */
-#define EDNS_CODE_LLQ                 0x0001   //Long-lived query
-#define EDNS_CODE_UL                  0x0002   //Update lease
-#define EDNS_CODE_NSID                0x0003   //Name Server Identifier (RFC 5001)
-#define EDNS_CODE_OWNER               0x0004   //Owner, reserved
-#define EDNS_CODE_DAU                 0x0005   //DNSSEC Algorithm Understood (RFC 6975)
-#define EDNS_CODE_DHU                 0x0006   //DS Hash Understood (RFC 6975)
-#define EDNS_CODE_N3U                 0x0007   //DSEC3 Hash Understood (RFC 6975)
-#define EDNS_CODE_CSUBNET             0x0008   //Client subnet as assigned by IANA
-#define EDNS_CODE_EDNS_EXPIRE         0x0009   //EDNS Expire (RFC 7314)
-
-//About Address Family Numbers, see https://www.iana.org/assignments/address-family-numbers/address-family-numbers.xhtml.
-#define ADDRESS_FAMILY_IPV4           0x0001
-#define ADDRESS_FAMILY_IPV6           0x0002
+//Source prefix bits
+#define EDNS_CLIENT_SUBNET_SOURCE_PREFIX_IPV6    56U
+#define EDNS_CLIENT_SUBNET_SOURCE_PREFIX_IPV4    24U
 typedef struct _edns_client_subnet_
 {
 	uint16_t              Code;
@@ -2173,7 +2486,34 @@ typedef struct _edns_client_subnet_
 	uint8_t               Netmask_Source;
 	uint8_t               Netmask_Scope;
 //	uint8_t               *Address;
-}edns_client_subnet, *pedns_client_subnet;
+}edns_client_subnet;
+
+/* Extension Mechanisms for Domain Name System/DNS, Cookies in EDNS request
+* RFC 7873, Domain Name System (DNS) Cookies(https://tools.ietf.org/html/rfc7873)
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|             Code              |            Length             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                         Client Cookie                         |
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
+/                         Server Cookie                         /
+/                                                               /
+/                                                               /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+*/
+typedef struct _edns_cookies_
+{
+	uint16_t              Code;
+	uint16_t              Length;
+	uint64_t              ClientCookie;
+//	uint64_t              ServerCookie_A;
+//	uint8_t               *ServerCookie_B;
+}edns_cookies;
 
 /* Domain Name System/DNS Delegation Signer/DS Resource Records
 
@@ -2188,29 +2528,29 @@ typedef struct _edns_client_subnet_
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 */
-#define DNSSEC_DS_DIGEST_RESERVED              0
-#define DNSSEC_DS_DIGEST_SHA1                  1U       //RFC 3658, Delegation Signer (DS) Resource Record (RR)(https://tools.ietf.org/html/rfc3658)
-#define DNSSEC_DS_DIGEST_SHA256                2U       //RFC 4509, Use of SHA-256 in DNSSEC Delegation Signer (DS) Resource Records (RRs)(https://tools.ietf.org/html/rfc4509)
-#define DNSSEC_DS_DIGEST_GOST                  3U       //RFC 5933, Use of GOST Signature Algorithms in DNSKEY and RRSIG Resource Records for DNSSEC(https://tools.ietf.org/html/rfc5933)
-#define DNSSEC_DS_DIGEST_SHA384                4U       //RFC 6605, Elliptic Curve Digital Signature Algorithm (DSA) for DNSSEC(https://tools.ietf.org/html/rfc6605)
+#define DNSSEC_DIGEST_DS_RESERVED              0
+#define DNSSEC_DIGEST_DS_SHA1                  1U       //RFC 3658, Delegation Signer (DS) Resource Record (RR)(https://tools.ietf.org/html/rfc3658)
+#define DNSSEC_DIGEST_DS_SHA256                2U       //RFC 4509, Use of SHA-256 in DNSSEC Delegation Signer (DS) Resource Records (RRs)(https://tools.ietf.org/html/rfc4509)
+#define DNSSEC_DIGEST_DS_GOST                  3U       //RFC 5933, Use of GOST Signature Algorithms in DNSKEY and RRSIG Resource Records for DNSSEC(https://tools.ietf.org/html/rfc5933)
+#define DNSSEC_DIGEST_DS_SHA384                4U       //RFC 6605, Elliptic Curve Digital Signature Algorithm (DSA) for DNSSEC(https://tools.ietf.org/html/rfc6605)
 
-//About this list, see https://www.iana.org/assignments/ds-rr-types/ds-rr-types.xhtml
+//About this list, please visit https://www.iana.org/assignments/ds-rr-types/ds-rr-types.xhtml.
 #define DNSSEC_DS_TYPE_RESERVED                0
 #define DNSSEC_DS_TYPE_SHA1                    1U
 #define DNSSEC_DS_TYPE_SHA256                  2U
 #define DNSSEC_DS_TYPE_GOST                    3U
 #define DNSSEC_DS_TYPE_SHA384                  4U
-#define SHA1_LENGTH                            20       //SHA-1 output is 160 bits/20 bytes lentgh
-#define SHA256_LENGTH                          32       //SHA-256 output is 256 bits/32 bytes lentgh
-#define GOST_LENGTH                            32       //GOST R 34.11-94 output is 256 bits/32 bytes lentgh
-#define SHA384_LENGTH                          48       //SHA-384 output is 384 bits/48 bytes lentgh
+#define DNSSEC_LENGTH_SHA1                     20U      //SHA-1 output is 160 bits/20 bytes lentgh
+#define DNSSEC_LENGTH_SHA256                   32U      //SHA-256 output is 256 bits/32 bytes lentgh
+#define DNSSEC_LENGTH_GOST                     32U      //GOST R 34.11-94 output is 256 bits/32 bytes lentgh
+#define DNSSEC_LENGTH_SHA384                   48U      //SHA-384 output is 384 bits/48 bytes lentgh
 typedef struct _dns_record_ds_
 {
 	uint16_t              KeyTag;
 	uint8_t               Algorithm;
 	uint8_t               Type;
 //	uint8_t               *Digest;
-}dns_record_ds, *pdns_record_ds;
+}dns_record_ds;
 
 /* Domain Name System/DNS Resource Record Digital Signature/RRSIG Records
 
@@ -2256,10 +2596,10 @@ typedef struct _dns_record_ds_
 #define DNSSEC_AlGORITHM_PRIVATE_DNS           253U     //RFC 4034, Private algorithm(Resource Records for the DNS Security Extensions(https://tools.ietf.org/html/rfc4034)
 #define DNSSEC_AlGORITHM_PRIVATE_OID           254U     //RFC 4034, Private algorithm(Resource Records for the DNS Security Extensions(https://tools.ietf.org/html/rfc4034)
 #define DNSSEC_AlGORITHM_RESERVED_255          255U     //RFC 4034, Reserved(Resource Records for the DNS Security Extensions(https://tools.ietf.org/html/rfc4034)
-#define RSA_MIN_LENGTH                         64U
-#define DH_MIN_LENGTH                          96U
-#define DSA_MIN_LENGTH                         128U
-#define ECC_MIN_LENGTH                         24U
+#define DNSSEC_MINSIZE_RSA                     64U
+#define DNSSEC_MINSIZE_DH                      96U
+#define DNSSEC_MINSIZE_DSA                     128U
+#define DNSSEC_MINSIZE_ECC                     24U
 typedef struct _dns_record_rrsig_
 {
 	uint16_t              TypeCovered;
@@ -2271,7 +2611,7 @@ typedef struct _dns_record_rrsig_
 	uint16_t              KeyTag;
 //	uint8_t               *SignerName;
 //	uint8_t               *Signature;
-}dns_record_rrsig, *pdns_record_rrsig;
+}dns_record_rrsig;
 
 /* Domain Name System/DNS DNS Key/DNSKEY Resource Records
 
@@ -2293,8 +2633,9 @@ typedef struct _dns_record_rrsig_
 #define DNSSEC_DNSKEY_PROTOCOL                 3U
 typedef struct _dns_record_dnskey_
 {
-	union {
+//	union {
 		uint16_t          Flags;
+/* No need to define sub structure.
 		struct {
 		#if BYTE_ORDER == LITTLE_ENDIAN
 			uint8_t       ZoneKey:1;
@@ -2310,11 +2651,12 @@ typedef struct _dns_record_dnskey_
 			uint8_t       KeySigningKey:1;
 		#endif
 		}FlagsBits;
-	};
+*/
+//	};
 	uint8_t               Protocol;
 	uint8_t               Algorithm;
 //	uint8_t               *PublicKey;
-}dns_record_dnskey, *pdns_record_dnskey;
+}dns_record_dnskey;
 
 /* Domain Name System/DNS Next-Secure/NSEC Resource Records
 
@@ -2334,7 +2676,7 @@ typedef struct _dns_record_nsec_
 {
 //	uint8_t                NextDomainName;
 //	uint8_t                TypeBitMap;
-}dns_record_nsec, *pdns_record_nsec;
+}dns_record_nsec;
 */
 
 /* Domain Name System/DNS NSEC version 3/NSEC3 Resource Records
@@ -2355,13 +2697,14 @@ typedef struct _dns_record_nsec_
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 */
-//About this list, see IANA Domain Name System Security (DNSSEC) NextSECure3 (NSEC3) Parameters(https://www.iana.org/assignments/dnssec-nsec3-parameters/dnssec-nsec3-parameters.xhtml)
+//About this list, please visit IANA Domain Name System Security (DNSSEC) NextSECure3 (NSEC3) Parameters(https://www.iana.org/assignments/dnssec-nsec3-parameters/dnssec-nsec3-parameters.xhtml)
 #define DNSSEC_NSEC3_ALGORITHM_SHA1            1U
 typedef struct _dns_record_nsec3_
 {
 	uint8_t               Algorithm;
-	union {
+//	union {
 		uint8_t           Flags;
+/* No need to define sub structure.
 		struct {
 		#if BYTE_ORDER == LITTLE_ENDIAN
 			uint8_t       OptOut:1;
@@ -2371,14 +2714,15 @@ typedef struct _dns_record_nsec3_
 			uint8_t       OptOut:1;
 		#endif
 		}FlagsBits;
-	};
+*/
+//	};
 	uint16_t              Iterations;
 	uint8_t               SaltLength;
 //	uint8_t               *Salt;
 //	uint8_t               HashLength;
 //	uint8_t               *NextHashedOwnerName;
 //	uint8_t               *TypeBitMap;
-}dns_record_nsec3, *pdns_record_nsec3;
+}dns_record_nsec3;
 
 /* Domain Name System/DNS NSEC version 3 Parameters/NSEC3PARAM Resource Records
 
@@ -2392,12 +2736,13 @@ typedef struct _dns_record_nsec3_
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 */
-//About this list, see IANA Domain Name System Security (DNSSEC) NextSECure3 (NSEC3) Parameters(https://www.iana.org/assignments/dnssec-nsec3-parameters/dnssec-nsec3-parameters.xhtml)
+//About this list, please visit IANA Domain Name System Security (DNSSEC) NextSECure3 (NSEC3) Parameters(https://www.iana.org/assignments/dnssec-nsec3-parameters/dnssec-nsec3-parameters.xhtml)
 typedef struct _dns_record_nsec3param_
 {
 	uint8_t               Algorithm;
-	union {
+//	union {
 		uint8_t           Flags;
+/* No need to define sub structure.
 		struct {
 		#if BYTE_ORDER == LITTLE_ENDIAN
 			uint8_t       Reserved:1;
@@ -2407,11 +2752,12 @@ typedef struct _dns_record_nsec3param_
 			uint8_t       Reserved:1;
 		#endif
 		}FlagsBits;
-	};
+*/
+//	};
 	uint16_t              Iterations;
 	uint8_t               SaltLength;
 //	uint8_t               *Salt;
-}dns_record_nsec3param, *pdns_record_nsec3param;
+}dns_record_nsec3param;
 
 /* Domain Name System/DNS Certification Authority Authorization/CAA Resource Records
 
@@ -2431,8 +2777,9 @@ typedef struct _dns_record_nsec3param_
 */
 typedef struct _dns_record_caa_
 {
-	union {
+//	union {
 		uint8_t           Flags;
+/* No need to define sub structure.
 		struct {
 		#if BYTE_ORDER == LITTLE_ENDIAN
 			uint8_t       Zero:7;
@@ -2442,33 +2789,39 @@ typedef struct _dns_record_caa_
 			uint8_t       Zero:7;
 		#endif
 		}FlagsBits;
-	};
+*/
+//	};
 	uint8_t               Length;
 //	uint8_t               *Tag;
 //	uint8_t               *Value;
-}dns_record_caa, *pdns_record_caa;
+}dns_record_caa;
 
 
 //Domain Name System Curve/DNSCurve part
 #if defined(ENABLE_LIBSODIUM)
-// About DNSCurve standards:
+// About DNSCurve standards: 
 // DNSCurve: Usable security for DNS(https://dnscurve.org)
 // DNSCrypt, A protocol to improve DNS security(https://dnscrypt.org)
+#ifndef IPPORT_DNSCURVE
+	#define IPPORT_DNSCURVE                   443U
+#endif
+#define DNSCURVE_DEFAULT_PORT_STRING      (":443")
 #define DNSCURVE_MAGIC_QUERY_LEN          8U
 #define DNSCURVE_MAGIC_QUERY_HEX_LEN      16U
+#define DNSCURVE_PAYLOAD_MULTIPLE_TIME    64U
 #define DNSCRYPT_RECEIVE_MAGIC            ("r6fnvWj8")                   //Receive Magic Number
 #define DNSCRYPT_CERT_MAGIC               ("DNSC")                       //Signature Magic Number
-#define DNSCRYPT_PADDING_SIGN             0x80
+#define DNSCRYPT_PADDING_SIGN_HEX         0x80
 #define DNSCRYPT_PADDING_SIGN_STRING      ('\x80')
-#define crypto_box_HALF_NONCEBYTES        (crypto_box_NONCEBYTES / 2U)
 // Function definitions
-#define crypto_sign_open                  crypto_sign_ed25519_open
 #define crypto_box                        crypto_box_curve25519xsalsa20poly1305
+#define crypto_box_HALF_NONCEBYTES        (crypto_box_NONCEBYTES / 2U)
 #define crypto_box_open                   crypto_box_curve25519xsalsa20poly1305_open
 #define crypto_box_keypair                crypto_box_curve25519xsalsa20poly1305_keypair
 #define crypto_box_beforenm               crypto_box_curve25519xsalsa20poly1305_beforenm
 #define crypto_box_afternm                crypto_box_curve25519xsalsa20poly1305_afternm
 #define crypto_box_open_afternm           crypto_box_curve25519xsalsa20poly1305_open_afternm
+#define crypto_sign_open                  crypto_sign_ed25519_open
 
 /* Domain Name System Curve/DNSCurve Test Strings/TXT Data header
 
@@ -2481,14 +2834,15 @@ typedef struct _dns_record_caa_
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 */
-#define DNSCURVE_VERSION_MAJOR     0x0001    //Latest major version of DNSCurve
-#define DNSCURVE_VERSION_MINOR     0         //Latest minor version of DNSCurve
+#define DNSCURVE_ES_X25519_XSALSA20_POLY1305     0x0001   //DNSCurve ES version of X25519-XSalsa20Poly1305
+#define DNSCURVE_ES_X25519_XCHACHA20_POLY1305    0x0002   //DNSCurve ES version of X25519-XChacha20Poly1305
+#define DNSCURVE_VERSION_MINOR                   0        //DNSCurve minor version
 typedef struct _dnscurve_txt_hdr_
 {
 	uint32_t              CertMagicNumber;
 	uint16_t              MajorVersion;
 	uint16_t              MinorVersion;
-}dnscurve_txt_hdr, *pdnscurve_txt_hdr;
+}dnscurve_txt_hdr;
 
 /* Domain Name System Curve/DNSCurve Signature with Test Strings/TXT Data
 
@@ -2522,7 +2876,7 @@ typedef struct _dnscurve_txt_signature_
 	uint32_t              Serial;
 	uint32_t              CertTime_Begin;
 	uint32_t              CertTime_End;
-}dnscurve_txt_signature, *pdnscurve_txt_signature;
+}dnscurve_txt_signature;
 #endif
 
 
@@ -2530,8 +2884,8 @@ typedef struct _dnscurve_txt_signature_
 /* About RFC standards
 * RFC 1928, SOCKS Protocol Version 5(https://tools.ietf.org/html/rfc1928)
 * RFC 1929, Username/Password Authentication for SOCKS V5(https://tools.ietf.org/html/rfc1929)
-* SOCKS(version 4): A protocol for TCP proxy across firewalls(http://www.openssh.com/txt/socks4.protocol)
-* SOCKS 4A: A Simple Extension to SOCKS 4 Protocol(http://www.openssh.com/txt/socks4a.protocol)
+* SOCKS(version 4): A protocol for TCP proxy across firewalls(https://www.openssh.com/txt/socks4.protocol)
+* SOCKS 4A: A Simple Extension to SOCKS 4 Protocol(https://www.openssh.com/txt/socks4a.protocol)
 */
 //Version, Method, Command and Reply definitions
 #define SOCKS_VERSION_4                            4U
@@ -2554,26 +2908,26 @@ typedef struct _dnscurve_txt_signature_
 #define SOCKS_COMMAND_CONNECT                      1U
 #define SOCKS_COMMAND_BIND                         2U
 #define SOCKS_COMMAND_UDP_ASSOCIATE                3U
-#define SOCKS4_VERSION_BYTES                       0
-#define SOCKS4_ADDRESS_DOMAIN_ADDRESS              0x00000001
-#define SOCKS4_REPLY_GRANTED                       0x5A         //Request granted
-#define SOCKS4_REPLY_REJECTED                      0x5B         //Request rejected or failed
-#define SOCKS4_REPLY_NOT_IDENTD                    0x5C         //Request failed because client is not running identd(or not reachable from the server).
-#define SOCKS4_REPLY_NOT_CONFIRM                   0x5D         //Request failed because client's identd could not confirm the user ID string in the request.
-#define SOCKS5_ADDRESS_IPV4                        1U
-#define SOCKS5_ADDRESS_DOMAIN                      3U
-#define SOCKS5_ADDRESS_IPV6                        4U
-#define SOCKS5_REPLY_SUCCESS                       0
-#define SOCKS5_REPLY_SERVER_FAILURE                1U
-#define SOCKS5_REPLY_NOT_ALLOWED                   2U
-#define SOCKS5_REPLY_NETWORK_UNREACHABLE           3U
-#define SOCKS5_REPLY_HOST_UNREACHABLE              4U
-#define SOCKS5_REPLY_REFUSED                       5U
-#define SOCKS5_REPLY_TTL_EXPORED                   6U
-#define SOCKS5_REPLY_COMMAND_NOT_SUPPORTED         7U
-#define SOCKS5_REPLY_ADDRESS_TYPE_NOT_SUPPORTED    8U
-#define SOCKS5_REPLY_UNASSIGNED_A                  9U
-#define SOCKS5_REPLY_UNASSIGNED_B                  0xFF
+#define SOCKS_4_VERSION_BYTES                      0
+#define SOCKS_4_ADDRESS_DOMAIN_ADDRESS             0x00000001
+#define SOCKS_4_REPLY_GRANTED                      0x5A         //Request granted
+#define SOCKS_4_REPLY_REJECTED                     0x5B         //Request rejected or failed
+#define SOCKS_4_REPLY_NOT_IDENTD                   0x5C         //Request failed because client is not running identd(or not reachable from the server).
+#define SOCKS_4_REPLY_NOT_CONFIRM                  0x5D         //Request failed because client's identd could not confirm the user ID string in the request.
+#define SOCKS_5_ADDRESS_IPV4                       1U
+#define SOCKS_5_ADDRESS_DOMAIN                     3U
+#define SOCKS_5_ADDRESS_IPV6                       4U
+#define SOCKS_5_REPLY_SUCCESS                      0
+#define SOCKS_5_REPLY_SERVER_FAILURE               1U
+#define SOCKS_5_REPLY_NOT_ALLOWED                  2U
+#define SOCKS_5_REPLY_NETWORK_UNREACHABLE          3U
+#define SOCKS_5_REPLY_HOST_UNREACHABLE             4U
+#define SOCKS_5_REPLY_REFUSED                      5U
+#define SOCKS_5_REPLY_TTL_EXPORED                  6U
+#define SOCKS_5_REPLY_COMMAND_NOT_SUPPORTED        7U
+#define SOCKS_5_REPLY_ADDRESS_TYPE_NOT_SUPPORTED   8U
+#define SOCKS_5_REPLY_UNASSIGNED_A                 9U
+#define SOCKS_5_REPLY_UNASSIGNED_B                 0xFF
 
 //SOCKS client version identifier and method selection message
 /*
@@ -2588,9 +2942,9 @@ typedef struct _socks_client_selection_message_
 {
 	uint8_t               Version;
 	uint8_t               Methods_Number;
-	uint8_t               Methods_A;
-	uint8_t               Methods_B;
-}socks_client_selection, *psocks_client_selection;
+	uint8_t               Methods_1;
+	uint8_t               Methods_2;
+}socks_client_selection;
 
 //SOCKS server method selection message
 /*
@@ -2605,7 +2959,7 @@ typedef struct _socks_server_selection_message_
 {
 	uint8_t               Version;
 	uint8_t               Method;
-}socks_server_selection, *psocks_server_selection;
+}socks_server_selection;
 
 //SOCKS client Username/Password authentication message
 /*
@@ -2624,7 +2978,7 @@ typedef struct _socks_client_user_authentication_
 //	uint8_t               *UserName;
 //	uint8_t               Password_Length;
 //	uint8_t               *Password;
-}socks_client_user_authentication, *psocks_client_user_authentication;
+}socks_client_user_authentication;
 
 
 //SOCKS server Username/Password authentication message
@@ -2640,7 +2994,7 @@ typedef struct _socks_server_user_authentication_
 {
 	uint8_t               Version;
 	uint8_t               Status;
-}socks_server_user_authentication, *psocks_server_user_authentication;
+}socks_server_user_authentication;
 
 //SOCKS version 4 client request message
 /*
@@ -2662,7 +3016,7 @@ typedef struct _socks4_client_command_request_
 	uint16_t              Remote_Port;
 	in_addr               Remote_Address;
 	uint8_t               UserID;
-}socks4_client_command_request, *psocks4_client_command_request;
+}socks4_client_command_request;
 
 //SOCKS version 4 server reply message
 /*
@@ -2683,7 +3037,7 @@ typedef struct _socks4_server_command_reply_
 	uint8_t               Command;
 	uint16_t              Remote_Port;
 	in_addr               Remote_Address;
-}socks4_server_command_reply, *psocks4_server_command_reply;
+}socks4_server_command_reply;
 
 //SOCKS version 5 client request message
 /*
@@ -2706,7 +3060,7 @@ typedef struct _socks5_client_command_request_
 	uint8_t               Address_Type;
 //	uint8_t               *Remote_Address;
 //	uint16_t              Remote_Port;
-}socks5_client_command_request, *psocks5_client_command_request;
+}socks5_client_command_request;
 
 //SOCKS version 5 server reply message
 /*
@@ -2729,7 +3083,7 @@ typedef struct _socks5_server_command_reply_
 	uint8_t               Bind_Address_Type;
 //	uint8_t               *Bind_Address;
 //	uint16_t              Bind_Port;
-}socks5_server_command_reply, *psocks5_server_command_reply;
+}socks5_server_command_reply;
 
 //SOCKS UDP relay request
 /*
@@ -2751,7 +3105,315 @@ typedef struct _socks_udp_relay_request_
 	uint8_t               Address_Type;
 //	uint8_t               *Remote_Address;
 //	uint16_t              Remote_Port;
-}socks_udp_relay_request, *psocks_udp_relay_request;
+}socks_udp_relay_request;
+
+
+// Hypertext Transfer Protocol/HTTP part
+/* About RFC standards
+* RFC 7230, Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and Routing(https://tools.ietf.org/html/rfc7230)
+* RFC 7231, Hypertext Transfer Protocol (HTTP/1.1): Semantics and Content(https://tools.ietf.org/html/rfc7231)
+* RFC 7235, Hypertext Transfer Protocol (HTTP/1.1): Authentication(https://tools.ietf.org/html/rfc7235)
+* RFC 7540, Hypertext Transfer Protocol Version 2 (HTTP/2)(https://tools.ietf.org/html/rfc7540)
+* RFC 7541, HPACK: Header Compression for HTTP/2(https://tools.ietf.org/html/rfc7541)
+* RFC 7617, The 'Basic' HTTP Authentication Scheme(https://tools.ietf.org/html/rfc7617)
+*/
+//Size and data definitions
+#define HTTP_STATUS_CODE_SIZE                       3U
+#if defined(ENABLE_TLS)
+#if defined(PLATFORM_WIN)
+#if !defined(PLATFORM_WIN_XP)
+	#define HTTP_1_TLS_ALPN_STRING                      ("http/1.1")
+	#define HTTP_2_TLS_ALPN_STRING                      ("h2")
+#endif
+#elif (defined(PLATFORM_FREEBSD) || defined(PLATFORM_LINUX) || defined(PLATFORM_MACOS))
+	#define HTTP_1_TLS_ALPN_STRING                      {8U, 'h', 't', 't', 'p', '/', '1', '.', '1'}
+	#define HTTP_2_TLS_ALPN_STRING                      {2U, 'h', '2'}
+#endif
+#endif
+/* Hypertext Transfer Protocol Version 2 (HTTP/2) frame header
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                    Length                     |     Type      |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|     Flags     |R|              Stream Identifier              |   R/Reserved
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|   Stream ID   |                    Payload                    /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/                                                               /
+/                            Payload                            /
+/                                                               /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*/
+#define HTTP_2_FRAME_TYPE_DATA                      0
+#define HTTP_2_FRAME_TYPE_HEADERS                   1U
+#define HTTP_2_FRAME_TYPE_PRIORITY                  2U
+#define HTTP_2_FRAME_TYPE_RST_STREAM                3U
+#define HTTP_2_FRAME_TYPE_SETTINGS                  4U
+#define HTTP_2_FRAME_TYPE_PUSH_PROMISE              5U
+#define HTTP_2_FRAME_TYPE_PING                      6U
+#define HTTP_2_FRAME_TYPE_GOAWAY                    7U
+#define HTTP_2_FRAME_TYPE_WINDOW_UPDATE             8U
+#define HTTP_2_FRAME_TYPE_CONTINUATION              9U
+#define HTTP_2_FRAME_INIT_STREAM_ID                 1U
+#define HTTP_2_FREAM_MAXSIZE                        16383U
+#define HTTP_2_CONNECTION_CLIENT_PREFACE            ("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n")
+typedef struct _http2_frame_hdr_
+{
+	uint8_t               Length_High;
+	uint16_t              Length_Low;
+	uint8_t               Type;
+	uint8_t               Flags;
+	uint32_t              StreamIdentifier;
+//	uint8_t               *Payload;
+}http2_frame_hdr;
+
+//No padding at all, so do not need DATA frame header.
+/* Hypertext Transfer Protocol Version 2 (HTTP/2) DATA frame header
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/Padding Length /                     Data                      /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/                                                               /
+/                             Data                              /
+/                                                               /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/                                                               /
+/                            Padding                            /
+/                                                               /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*/
+#define HTTP_2_DATA_FLAGS_END_STREAM                 0x01
+/*
+typedef struct _http2_data_frame_hdr_
+{
+//	uint8_t               PaddingLength;
+	uint8_t               *Data;
+//	uint8_t               *Padding;
+}http2_data_frame_hdr;
+*/
+
+/* Hypertext Transfer Protocol Version 2 (HTTP/2) HEADERS frame header
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/Padding Length /E|              Stream Dependency              /   E/Explicitly
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/      SD       /    Weight     /     Header Block Fragment     /   SD/Stream Dependency
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/                                                               /
+/                     Header Block Fragment                     /
+/                                                               /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/                                                               /
+/                            Padding                            /
+/                                                               /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*/
+#define HTTP_2_HEADERS_FLAGS_END_STREAM              0x01
+#define HTTP_2_HEADERS_FLAGS_END_HEADERS             0x04
+#define HTTP_2_HEADERS_FLAGS_PADDED                  0x08
+#define HTTP_2_HEADERS_FLAGS_PRIORITY                0x20
+#define HTTP_2_HEADERS_LITERAL_WITHOUT_INDEXED       0
+#define HTTP_2_HEADERS_LITERAL_NEVER_INDEXED         0x10
+#define HTTP_2_HEADERS_LITERAL_TABLE_SIZE_UPDATE     0x20
+#define HTTP_2_HEADERS_LITERAL_INCREMENTAL_INDEXED   0x40
+#define HTTP_2_HEADERS_LITERAL_LOW_1_BITS            0x01
+#define HTTP_2_HEADERS_LITERAL_LOW_2_BITS            0x03
+#define HTTP_2_HEADERS_LITERAL_LOW_3_BITS            0x07
+#define HTTP_2_HEADERS_LITERAL_LOW_4_BITS            0x0F
+#define HTTP_2_HEADERS_LITERAL_LOW_5_BITS            0x1F
+#define HTTP_2_HEADERS_LITERAL_LOW_6_BITS            0x3F
+#define HTTP_2_HEADERS_LITERAL_LOW_7_BITS            0x7F
+#define HTTP_2_HEADERS_LITERAL_HIGH_1_BITS           0x80
+#define HTTP_2_HEADERS_LITERAL_HIGH_2_BITS           0xC0
+#define HTTP_2_HEADERS_LITERAL_HIGH_3_BITS           0xE0
+#define HTTP_2_HEADERS_LITERAL_HIGH_4_BITS           0xF0
+#define HTTP_2_HEADERS_LITERAL_INDEXED_STATUS_200    0x88
+#define HTTP_2_HEADERS_INTEGER_LOW_1_BITS            HTTP_2_HEADERS_LITERAL_LOW_1_BITS
+#define HTTP_2_HEADERS_INTEGER_LOW_2_BITS            HTTP_2_HEADERS_LITERAL_LOW_2_BITS
+#define HTTP_2_HEADERS_INTEGER_LOW_3_BITS            HTTP_2_HEADERS_LITERAL_LOW_3_BITS
+#define HTTP_2_HEADERS_INTEGER_LOW_4_BITS            HTTP_2_HEADERS_LITERAL_LOW_4_BITS
+#define HTTP_2_HEADERS_INTEGER_LOW_5_BITS            HTTP_2_HEADERS_LITERAL_LOW_5_BITS
+#define HTTP_2_HEADERS_INTEGER_LOW_6_BITS            HTTP_2_HEADERS_LITERAL_LOW_6_BITS
+#define HTTP_2_HEADERS_INTEGER_LOW_7_BITS            HTTP_2_HEADERS_LITERAL_LOW_7_BITS
+#define HTTP_2_HEADERS_INTEGER_HIGH_1_BITS           HTTP_2_HEADERS_LITERAL_HIGH_1_BITS
+/*
+typedef struct _http2_headers_frame_hdr_
+{
+//	uint8_t               PaddingLength;
+//	uint32_t              StreamDependency;
+//	uint8_t               Weight;
+	uint8_t               *HeaderBlockFragment;
+//	uint8_t               *Padding;
+}http2_headers_frame_hdr;
+*/
+
+/* Hypertext Transfer Protocol Version 2 (HTTP/2) PRIORITY frame
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|E|                      Stream Dependency                      |   E/Explicitly
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|    Weigth     |
++-+-+-+-+-+-+-+-+
+*/
+typedef struct _http2_priority_frame_
+{
+	uint32_t              StreamDependency;
+	uint8_t               Weight;
+}http2_priority_frame;
+
+/* Hypertext Transfer Protocol Version 2 (HTTP/2) RST_STREAM frame
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                          Error Code                           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*/
+#define HTTP_2_ERROR_NO_ERROR                        0
+#define HTTP_2_ERROR_PROTOCOL_ERROR                  1U
+#define HTTP_2_ERROR_INTERNAL_ERROR                  2U
+#define HTTP_2_ERROR_FLOW_CONTROL_ERROR              3U
+#define HTTP_2_ERROR_SETTINGS_TIMEOUT                4U
+#define HTTP_2_ERROR_STREAM_CLOSED                   5U
+#define HTTP_2_ERROR_FRAME_SIZE_ERROR                6U
+#define HTTP_2_ERROR_REFUSED_STREAM                  7U
+#define HTTP_2_ERROR_CANCEL                          8U
+#define HTTP_2_ERROR_COMPRESSION_ERROR               9U
+#define HTTP_2_ERROR_CONNECT_ERROR                   10U
+#define HTTP_2_ERROR_ENHANCE_YOUR_CALM               11U
+#define HTTP_2_ERROR_INADEQUATE_SECURITY             12U
+#define HTTP_2_ERROR_HTTP_1_1_REQUIRED               13U
+typedef struct _http2_rst_stream_frame_
+{
+	uint32_t               ErrorCode;
+}http2_rst_stream_frame;
+
+/* Hypertext Transfer Protocol Version 2 (HTTP/2) SETTINGS frame
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|          Identifier           |             Value             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|             Value             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*/
+#define HTTP_2_SETTINGS_TYPE_HEADERS_TABLE_SIZE       1U
+#define HTTP_2_SETTINGS_TYPE_ENABLE_PUSH              2U
+#define HTTP_2_SETTINGS_TYPE_MAX_CONCURRENT_STREAMS   3U
+#define HTTP_2_SETTINGS_TYPE_INITIAL_WINDOW_SIZE      4U
+#define HTTP_2_SETTINGS_TYPE_MAX_FRAME_SIZE           5U
+#define HTTP_2_SETTINGS_TYPE_MAX_HEADERS_LIST_SIZE    6U
+#define HTTP_2_SETTINGS_FLAGS_ACK                     0x01
+#define HTTP_2_SETTINGS_INIT_HEADERS_TABLE_SIZE       4096U
+#define HTTP_2_SETTINGS_INIT_ENABLE_PUSH              1U
+#define HTTP_2_SETTINGS_INIT_MAX_CONCURRENT_STREAMS   100U
+#define HTTP_2_SETTINGS_INIT_INITIAL_WINDOW_SIZE      65535U
+#define HTTP_2_SETTINGS_INIT_MAX_FRAME_SIZE           16384U
+typedef struct _http2_settings_frame_
+{
+	uint16_t               Identifier;
+	uint32_t               Value;
+}http2_settings_frame;
+
+/* Hypertext Transfer Protocol Version 2 (HTTP/2) PUSH_PROMISE frame header
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/Padding Length /R|             Promised Stream ID              /   R/Reserved
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/      SD       /    Weight     /     Header Block Fragment     /   SD/Stream Dependency
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/                                                               /
+/                     Header Block Fragment                     /
+/                                                               /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/                                                               /
+/                            Padding                            /
+/                                                               /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+typedef struct _http2_push_promise_frame_hdr_
+{
+//	uint8_t               PaddingLength;
+//	uint32_t              PromisedStreamID;
+	uint8_t               *HeaderBlockFragment;
+//	uint8_t               *Padding;
+}http2_push_promise_frame_hdr;
+*/
+
+/* Hypertext Transfer Protocol Version 2 (HTTP/2) PING frame
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                          Opaque Data                          |
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*/
+#define HTTP_2_PING_FLAGS_ACK                        0x01
+typedef struct _http2_ping_frame_
+{
+	uint64_t               OpaqueData;
+}http2_ping_frame;
+
+/* Hypertext Transfer Protocol Version 2 (HTTP/2) GOAWAY frame
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|R|                       Last-Stream-ID                        |   R/Reserved
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                          Error Code                           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/                                                               /
+/                     Additional Debug Data                     /
+/                                                               /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*/
+typedef struct _http2_goaway_frame_
+{
+	uint32_t               LastStreamID;
+	uint32_t               ErrorCode;
+}http2_goaway_frame;
+
+/* Hypertext Transfer Protocol Version 2 (HTTP/2) WINDOW_UPDATE frame
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|R|                  Window Size Increment                      |   R/Reserved
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*/
+typedef struct _http2_window_update_frame_
+{
+	uint32_t               WindowSizeIncrement;
+}http2_window_update_frame;
+
+/* Hypertext Transfer Protocol Version 2 (HTTP/2) CONTINUATION frame
+
+                    1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 3 3 3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/                                                               /
+/                     Header Block Fragment                     /
+/                                                               /
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+typedef struct _http2_continuation_frame_
+{
+	uint8_t               *HeaderBlockFragment;
+}http2_continuation_frame;
+*/
 
 
 #if defined(ENABLE_TLS)
@@ -2763,14 +3425,19 @@ typedef struct _socks_udp_relay_request_
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 | Content Type  |            Version            |    Length     /
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-/    Length     /                    Payload                    /
+/    Length     |                    Payload                    /
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-++-+-+-+-+-+-+-+-++-+-+-+-+-+-+
 
 */
+#define TLS_VERSION_MIN                             0x0301                      //TLS 1.0 = SSL 3.1
 typedef struct _tls_base_record_
 {
 	uint8_t               ContentType;
 	uint16_t              Version;
 	uint16_t              Length;
-}tls_base_record, *ptls_base_record;
+}tls_base_record;
+#endif
+
+//Memory alignment settings(Part 2)
+#pragma pack(pop) //Restore original alignment from stack.
 #endif

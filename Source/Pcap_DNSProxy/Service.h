@@ -1,6 +1,6 @@
 ﻿// This code is part of Pcap_DNSProxy
-// A local DNS server based on WinPcap and LibPcap
-// Copyright (C) 2012-2016 Chengr28
+// Pcap_DNSProxy, a local DNS server based on WinPcap and LibPcap
+// Copyright (C) 2012-2019 Chengr28
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,37 +17,52 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-#include "Base.h"
+#ifndef PCAP_DNSPROXY_SERVICE_H
+#define PCAP_DNSPROXY_SERVICE_H
+
+#include "Include.h"
 
 //Global variables
 extern CONFIGURATION_TABLE Parameter;
-extern std::deque<DNS_CACHE_DATA> DNSCacheList;
-extern std::mutex ScreenLock, DNSCacheListLock;
-#if defined(PLATFORM_WIN)
 extern GLOBAL_STATUS GlobalRunningStatus;
+extern std::list<DNS_CACHE_DATA> DNSCacheList;
+extern std::unordered_multimap<std::string, std::list<DNS_CACHE_DATA>::iterator> DNSCacheIndexList;
+extern std::mutex ScreenLock, DNSCacheListLock;
 
 //Local variables
+#if defined(PLATFORM_WIN)
 static DWORD ServiceCurrentStatus = 0;
-static BOOL IsServiceRunning = FALSE;
+static auto IsServiceRunning = false;
 SERVICE_STATUS_HANDLE ServiceStatusHandle = nullptr;
 HANDLE ServiceEvent = nullptr;
 #endif
-uint64_t LastFlushDNSTime = 0;
+#if (defined(PLATFORM_FREEBSD) || defined(PLATFORM_LINUX) || defined(PLATFORM_MACOS))
+uint64_t LastFlushCacheTime = 0;
+#endif
 
 //Functions
 #if defined(PLATFORM_WIN)
-size_t WINAPI ServiceControl(
-	const DWORD dwControlCode);
-BOOL WINAPI ExecuteService(
+bool SystemSecurityInit(
+	const ACL * const ACL_Buffer, 
+	SECURITY_ATTRIBUTES &SecurityAttributes, 
+	SECURITY_DESCRIPTOR &SecurityDescriptor, 
+	PSID &SID_Value);
+DWORD WINAPI ServiceControl(
+	const DWORD ControlCode, 
+	const DWORD EventType, 
+	const LPVOID EventData, 
+	const LPVOID Context);
+HANDLE WINAPI ExecuteService(
 	void);
 void WINAPI TerminateService(
 	void);
 DWORD WINAPI ServiceProc(
-	PVOID lpParameter);
-BOOL WINAPI UpdateServiceStatus(
-	const DWORD dwCurrentState, 
-	const DWORD dwWin32ExitCode, 
-	const DWORD dwServiceSpecificExitCode, 
-	const DWORD dwCheckPoint, 
-	const DWORD dwWaitHint);
+	PVOID ProcParameter);
+bool WINAPI UpdateServiceStatus(
+	const DWORD CurrentState, 
+	const DWORD ExitCode, 
+	const DWORD ServiceSpecificExitCode, 
+	const DWORD CheckPoint, 
+	const DWORD WaitHint);
+#endif
 #endif

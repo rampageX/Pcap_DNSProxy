@@ -1,6 +1,6 @@
 ﻿// This code is part of Pcap_DNSProxy
-// A local DNS server based on WinPcap and LibPcap
-// Copyright (C) 2012-2016 Chengr28
+// Pcap_DNSProxy, a local DNS server based on WinPcap and LibPcap
+// Copyright (C) 2012-2019 Chengr28
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,7 +17,10 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-#include "Base.h"
+#ifndef PCAP_DNSPROXY_PROTOCOL_H
+#define PCAP_DNSPROXY_PROTOCOL_H
+
+#include "Include.h"
 
 //Global variables
 extern CONFIGURATION_TABLE Parameter;
@@ -30,15 +33,19 @@ extern std::vector<DIFFERNET_FILE_SET_HOSTS> *HostsFileSetUsing, *HostsFileSetMo
 extern std::mutex IPFilterFileLock, HostsFileLock;
 
 //Functions
-size_t CheckResponseCNAME(
+bool CheckAddressRouting(
+	const uint16_t Protocol, 
+	const void * const OriginalAddr);
+size_t CheckResponse_CNAME(
 	uint8_t * const Buffer, 
 	const size_t Length, 
-	const size_t CNAME_Index, 
-	const size_t CNAME_Length, 
 	const size_t BufferSize, 
-	size_t &RecordNum);
-bool CheckDNSSECRecords(
+	const size_t CanonicalIndex, 
+	const size_t CanonicalLength, 
+	size_t &IncreaseCount);
+bool Check_DNSSEC_Record(
 	const uint8_t * const Buffer, 
 	const size_t Length, 
 	const uint16_t Type, 
-	const uint16_t BeforeType);
+	const uint16_t PreviousType);
+#endif

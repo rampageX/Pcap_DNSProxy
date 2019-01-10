@@ -1,6 +1,6 @@
 ﻿// This code is part of Pcap_DNSProxy
-// A local DNS server based on WinPcap and LibPcap
-// Copyright (C) 2012-2016 Chengr28
+// Pcap_DNSProxy, a local DNS server based on WinPcap and LibPcap
+// Copyright (C) 2012-2019 Chengr28
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,12 +17,15 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-#include "Definition.h"
+#ifndef PCAP_DNSPROXY_TEMPLATE_H
+#define PCAP_DNSPROXY_TEMPLATE_H
+
+#include "Type.h"
 
 //////////////////////////////////////////////////
 // Template definitions
 // 
-//Blocking queue class, from https://senlinzhan.github.io/2015/08/24/C-11%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B%E5%85%AD
+//Blocking queue class
 template<typename Ty, typename Container = std::queue<Ty>> class BlockingQueue
 {
 public:
@@ -37,21 +40,21 @@ public:
 private:
 	Container                OriginalQueue;
 	MutexType                OriginalMutex;
-	ConditionVariableType    OriginalCondVar;
+	ConditionVariableType    OriginalConditionVariable;
 
 public:
 //Redefine operator functions
 	BlockingQueue() = default;
 	BlockingQueue(const BlockingQueue &) = delete;
-	BlockingQueue &operator=(const BlockingQueue &) = delete;
+	BlockingQueue & operator=(const BlockingQueue &) = delete;
 
 //Pop function
 	void pop(
-		Reference Elem)
+		Reference Element)
 	{
 		std::unique_lock<MutexType> Lock(OriginalMutex);
-		OriginalCondVar.wait(Lock, [this](){return !OriginalQueue.empty();});
-		Elem = std::move(OriginalQueue.front());
+		OriginalConditionVariable.wait(Lock, [this](){return !OriginalQueue.empty();});
+		Element = std::move(OriginalQueue.front());
 		OriginalQueue.pop();
 
 		return;
@@ -59,12 +62,12 @@ public:
 
 //Try to pop function
 	bool try_pop(
-		Reference Elem)
+		Reference Element)
 	{
 		std::lock_guard<MutexType> Lock(OriginalMutex);
 		if (OriginalQueue.empty())
 			return false;
-		Elem = std::move(OriginalQueue.front());
+		Element = std::move(OriginalQueue.front());
 		OriginalQueue.pop();
 
 		return true;
@@ -88,24 +91,24 @@ public:
 
 //Push function
 	void push(
-		const ValueType &Elem)
+		const ValueType &Element)
 	{
 		std::unique_lock<MutexType> Lock(OriginalMutex);
-		OriginalQueue.push(Elem);
+		OriginalQueue.push(Element);
 		Lock.unlock();
-		OriginalCondVar.notify_one();
+		OriginalConditionVariable.notify_one();
 
 		return;
 	}
 
 //Push function
 	void push(
-		ValueType &&Elem)
+		ValueType &&Element)
 	{
 		std::unique_lock<MutexType> Lock(OriginalMutex);
-		OriginalQueue.push(std::move(Elem));
+		OriginalQueue.push(std::move(Element));
 		Lock.unlock();
-		OriginalCondVar.notify_one();
+		OriginalConditionVariable.notify_one();
 
 		return;
 	}
@@ -120,10 +123,15 @@ public:
 	Ty                                   *Buffer;
 	size_t                               BufferSize;
 
+//Redefine operator functions
+//	DNSCurveHeapBufferTable() = default;
+	DNSCurveHeapBufferTable(const DNSCurveHeapBufferTable &) = delete;
+	DNSCurveHeapBufferTable & operator=(const DNSCurveHeapBufferTable &) = delete;
+
 //Member functions
 	DNSCurveHeapBufferTable(
 		void);
-	DNSCurveHeapBufferTable(
+	explicit DNSCurveHeapBufferTable(
 		const size_t Size);
 	DNSCurveHeapBufferTable(
 		const size_t Count, 
@@ -150,15 +158,14 @@ template<typename Ty> DNSCurveHeapBufferTable<Ty>::DNSCurveHeapBufferTable(
 template<typename Ty> DNSCurveHeapBufferTable<Ty>::DNSCurveHeapBufferTable(
 	const size_t Size)
 {
-	Buffer = (Ty *)sodium_malloc(Size);
-	if (Buffer == nullptr)
+	Buffer = reinterpret_cast<Ty *>(sodium_malloc(Size));
+	if (Buffer != nullptr)
 	{
-		exit(EXIT_FAILURE);
-		return;
-	}
-	else {
 		sodium_memzero(Buffer, Size);
 		BufferSize = Size;
+	}
+	else {
+		exit(EXIT_FAILURE);
 	}
 
 	return;
@@ -169,15 +176,14 @@ template<typename Ty> DNSCurveHeapBufferTable<Ty>::DNSCurveHeapBufferTable(
 	const size_t Count, 
 	const size_t Size)
 {
-	Buffer = (Ty *)sodium_allocarray(Count, Size);
-	if (Buffer == nullptr)
+	Buffer = reinterpret_cast<Ty *>(sodium_allocarray(Count, Size));
+	if (Buffer != nullptr)
 	{
-		exit(EXIT_FAILURE);
-		return;
-	}
-	else {
 		sodium_memzero(Buffer, Count * Size);
 		BufferSize = Count * Size;
+	}
+	else {
+		exit(EXIT_FAILURE);
 	}
 
 	return;
@@ -207,4 +213,5 @@ template<typename Ty> DNSCurveHeapBufferTable<Ty>::~DNSCurveHeapBufferTable(
 
 	return;
 }
+#endif
 #endif

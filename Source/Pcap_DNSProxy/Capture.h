@@ -1,6 +1,6 @@
 ﻿// This code is part of Pcap_DNSProxy
-// A local DNS server based on WinPcap and LibPcap
-// Copyright (C) 2012-2016 Chengr28
+// Pcap_DNSProxy, a local DNS server based on WinPcap and LibPcap
+// Copyright (C) 2012-2019 Chengr28
 // 
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,16 +17,19 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 
-#include "Base.h"
+#ifndef PCAP_DNSPROXY_CAPTURE_H
+#define PCAP_DNSPROXY_CAPTURE_H
+
+#include "Include.h"
 
 #if defined(ENABLE_PCAP)
 //Structure definitions
 typedef struct _capture_handler_param_
 {
-	uint16_t      DeviceType;
+	int           DeviceType;
 	uint8_t       *Buffer;
 	size_t        BufferSize;
-}CaptureHandlerParam, CAPTURE_HANDLER_PARAM, *PCaptureHandlerParam, *PCAPTURE_HANDLER_PARAM;
+}Capture_CallbackHandlerParam, CAPTURE_HANDLER_PARAM;
 
 //Global variables
 extern CONFIGURATION_TABLE Parameter;
@@ -37,34 +40,58 @@ extern DNSCURVE_CONFIGURATION_TABLE DNSCurveParameter;
 #endif
 extern std::deque<OUTPUT_PACKET_TABLE> OutputPacketList;
 extern std::mutex CaptureLock, OutputPacketListLock;
+
+//Local variables
 std::string PcapFilterRules;
 std::list<std::string> PcapRunningList;
 
 //Functions
-bool CaptureFilterRulesInit(
+bool Capture_FilterRulesInit(
 	std::string &FilterRules);
-bool CaptureModule(
-	const pcap_if * const pDrive, 
+bool Capture_MainProcess(
+	const pcap_if * const DriveInterface, 
 	const bool IsCaptureList);
-void CaptureHandler(
-	uint8_t * const Param, 
+void Capture_CallbackHandler(
+	uint8_t * const ProcParameter, 
 	const pcap_pkthdr * const PacketHeader, 
 	const uint8_t * const PacketData);
-bool CaptureNetworkLayer(
+bool Capture_AnalyzeNetworkLayer(
 	const uint16_t Protocol, 
 	const uint8_t * const Buffer, 
 	const size_t Length, 
 	const size_t BufferSize);
-bool CaptureCheck_ICMP(
+ssize_t Capture_AnalyzeFragment(
+	const uint16_t Protocol, 
+	const uint8_t * const Buffer, 
+	const size_t Length, 
+	bool &IsNeedTruncated);
+bool Capture_AnalyzeICMP(
 	const uint16_t Protocol, 
 	const uint8_t * const Buffer, 
 	const size_t Length);
-bool CaptureCheck_TCP(
+bool Capture_AnalyzeTCP(
 	const uint8_t * const Buffer);
-bool MatchPortToSend(
+bool Capture_AnalyzeDNS(
+	const uint8_t * const Buffer, 
+	const size_t BufferSize, 
+	bool &IsRegisterStatus);
+bool Capture_PacketStatusCheck(
+	const uint16_t Protocol, 
+	const uint8_t * const Buffer, 
+	const size_t DNS_DataOffset, 
+	const size_t DNS_DataLength, 
+	const size_t EDNS_Offset, 
+	const size_t EDNS_Length, 
+	const bool IsRegisterStatus, 
+	DNS_SERVER_DATA * const PacketSource);
+bool Capture_MatchPortToSend(
 	const uint16_t Protocol, 
 	const uint8_t * const Buffer, 
 	const size_t Length, 
 	const size_t BufferSize, 
-	const uint16_t Port);
+	const uint16_t Port
+//	const bool IsNeedTruncated, 
+//	const size_t EDNS_Length_Output
+);
+#endif
 #endif
